@@ -6,12 +6,6 @@
 		}
 	},
 	{
-		"path": "pages/menu/menu",
-		"style": {
-			"navigationBarTitleText": "uni-app"
-		}
-	},
-	{
 		"path": "pages/menu/newmap",
 		"style": {
 			"navigationBarTitleText": "uni-app"
