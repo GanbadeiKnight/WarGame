@@ -18,7 +18,8 @@
 		</div>
 		<!-- 遍历生成地图上的初始单位 -->
 		<div class="unit" v-for="(unit,unitIndex) in unitarr" v-if="unit.hasUnit" :class="getUnitClass(unit.unitType)"
-			:style="{top: unit.positionY + 'px', left: unit.positionX+ 'px'}" @click="selectUnit(unit,attackStatus)">
+			:style="{top: unit.positionY + 'px', left: unit.positionX+ 'px'}" @click="selectUnit($event,unit,attackStatus)"
+			:ref="'unit-'+unitIndex">
 			<div class="effect_wrapper"></div>
 			<div class="effect"></div>
 			<div class="health-bar">
@@ -210,54 +211,66 @@
 					}
 				}
 			},
-			selectUnit(unit, attackStatus) {
+			selectUnit(event,unit, attackStatus) {
 				//如果判定接收到的是一个attack值，则触发攻击判定
-				if (attackStatus === unit.id) {
-					console.log("触发了攻击事件")
-					const moveCell = document.getElementsByClassName("hex-cell")[unit.id]
-					const currentUnit = document.getElementsByClassName('unit')[this.unitarr.indexOf(unit)]
-					moveCell.style.backgroundColor = ''
-					//进行战斗计算
-					this.currentAttacker.hp = this.currentAttacker.hp - doCombat(unit, this.currentAttacker).result1
-					unit.hp = unit.hp - doCombat(unit, this.currentAttacker).result2
-					console.log("进攻者与防御者的生命值剩余：" + this.currentAttacker.hp, unit.hp)
-					if (unit.hp <= 0) {
-						unit.hasUnit = false
-						this.cellarr[unit.id].hasUnit = false
-						console.log("防御者已被消灭")
-					}
-					if (this.currentAttacker.hp <= 0) {
-						this.currentAttacker.hasUnit = false
-						this.cellarr[this.currentAttacker.id].hasUnit = false
-						console.log("进攻者已被消灭")
-					}
-					this.attackStatus = 0
-					//播放进攻音效
-					audio.panzerAttackAudio.volume = 0.1
-					audio.panzerAttackAudio.play()
-					//实现攻击特效
-					const effect_open = currentUnit.querySelectorAll('.effect')
-					const effect_close = currentUnit.querySelectorAll('.effect_wrapper')
-					console.log(effect_open)
-					effect_open.forEach((item) => {
-						console.log("执行了内部")
-						item.style.display = 'block';
-					})
-					effect_close.forEach((item) => {
-						item.style.display = 'none';
-					})
-					let timer=setTimeout(()=>{
+				for(let i = 0;i<attackStatus.length;i++){
+					if (attackStatus[i] === unit.id) {
+						console.log("触发了攻击事件")
+						//这个循环只是用来消除背景颜色
+						for(let i = 0;i<attackStatus.length;i++){
+							let index=attackStatus[i]
+							let moveCell = document.getElementsByClassName("hex-cell")[index]
+							moveCell.style.backgroundColor = ''
+						}
+						//使用ref的方式绑定每一个单位的唯一标识符，并且能够随时用JS访问到这个单位
+						const currentUnit = this.$refs['unit-' + this.unitarr.indexOf(unit)]
+						console.log(currentUnit[0])
+						
+						//进行战斗计算
+						this.currentAttacker.hp = this.currentAttacker.hp - doCombat(unit, this.currentAttacker).result1
+						unit.hp = unit.hp - doCombat(unit, this.currentAttacker).result2
+						console.log("进攻者与防御者的生命值剩余：" + this.currentAttacker.hp, unit.hp)
+						if (unit.hp <= 0) {
+							unit.hasUnit=false
+							// this.unitarr.splice(this.unitarr.indexOf(unit),1)
+							this.cellarr[unit.id].hasUnit = false
+							console.log("防御者已被消灭")
+						}
+						if (this.currentAttacker.hp <= 0) {
+							this.currentAttacker.hasUnit=false
+							// this.unitarr.splice(this.unitarr.indexOf(this.currentAttacker),1)
+							this.cellarr[this.currentAttacker.id].hasUnit = false
+							console.log("进攻者已被消灭")
+						}
+						this.attackStatus = []
+						//播放进攻音效
+						audio.panzerAttackAudio.volume = 0.1
+						audio.panzerAttackAudio.play()
+						//实现攻击特效
+						const effect_open = currentUnit[0].querySelectorAll('.effect')
+						const effect_close = currentUnit[0].querySelectorAll('.effect_wrapper')
+						console.log(effect_open)
 						effect_open.forEach((item) => {
-						  item.style.display = 'none';
+							console.log("执行了内部")
+							item.style.display = 'block';
 						})
 						effect_close.forEach((item) => {
-						  item.style.display = 'block';
+							item.style.display = 'none';
 						})
-						clearTimeout(timer)
-					},500)
-					return
+						let timer=setTimeout(()=>{
+							effect_open.forEach((item) => {
+							  item.style.display = 'none';
+							})
+							effect_close.forEach((item) => {
+							  item.style.display = 'block';
+							})
+							clearTimeout(timer)
+						},500)
+						return
+					}
 				}
-
+				//通常状态下的触发
+				console.log(event.target)
 				this.selectedUnit = !this.selectedUnit
 				console.log("选中了单位")
 				console.log("现在单位的单元格标签" + unit.x + unit.y)
@@ -338,6 +351,8 @@
 				console.log("现在单位的对应的地块ID是：" + unit.id)
 				//获取周围一圈的地块，判断地块上是否存在单位
 				const distanceArr = showRange(unit.x, unit.y, 1)
+				// 此处的原理是我们新建了一个二维哈希表，输入我们所要的方格的二维坐标即可返回索引值，这个算法用于优化出现移动范围，攻击范围的性能。
+				//下面的index即六边形网格范围寻索功能的网格所在cellarr数组中的索引对应
 				for (let i = 0; i < distanceArr.length; i++) {
 					let index = this.coordinateMap[`${distanceArr[i].x},${distanceArr[i].y}`]
 					if (!index || index === unit.id) {
@@ -345,12 +360,16 @@
 					}
 					if (this.cellarr[index].hasUnit) {
 						console.log("攻击范围内有敌人")
+						//搜寻到此网格并且使这个网格染成红色
 						const moveCell = document.getElementsByClassName("hex-cell")[index]
 						const timerRed=setTimeout(() => {
 							moveCell.style.backgroundColor = "rgba(192, 32, 35, 0.5)"
-							clearTimeout(timerRed)
+							// clearTimeout(timerRed)
 						}, 300)
-						this.attackStatus = index
+						//index是我们即将指向的单位的索引，我们将其赋给全局变量this.attackStatus用于与点击攻击的动作进行通信
+						this.attackStatus.push(index)
+						console.log(this.attackStatus)
+						//currentAttacker是我们当前正在触发攻击事件的具体单位，也是一个全局变量，原则上我们不允许同时选定多个攻击对象
 						this.currentAttacker = unit
 					}
 				}
@@ -407,7 +426,7 @@
 				unitarr: [], //单位列表
 				selectedUnit: false, //是否选择了单位
 				coordinateMap: {},
-				attackStatus: 0,
+				attackStatus: [],
 				currentAttacker: {},
 				effect: false
 			}
