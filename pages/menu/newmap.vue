@@ -39,6 +39,7 @@
 	import showRange from '../../my_modules/showRange.js' //引入显示范围
 	import getUnitInfo from '../../my_modules/unitInfo.js' //引入单位数据表
 	import audio from '../../my_modules/audio.js' //引入音频文件
+import { indexOf } from 'lodash';
 	const HexMapMixin = {
 		data() {
 			return {
@@ -62,11 +63,15 @@
 
 			let filteredArr = this.cellarr.filter(item => item.hasUnit)
 			let newUnitArr = cloneDeep(filteredArr) //深拷贝的形式进行对象赋值避免带来的连锁效应
-			newUnitArr.forEach(item => {
-				item.positionY = item.positionY - 3 //这两项仅仅只是对单位的初始坐标进行第一次修正，之后便会转入另外一次更加准确的修正当中
-				item.positionX = item.positionX + 23
+			this.indexMap = new Map()//创建一个新的哈希映射表，使我们两个数组之间后续可以利用下标进行联系
+			filteredArr.forEach((item,index) => {
+				this.indexMap.set(this.cellarr.indexOf(item),index) //这个哈希表前者为unitarr的下标，后者为cellarr的下标
+			})
+			newUnitArr.forEach((item,index) => {
+				//赋值到我们的数组当中
 				this.unitarr.push(item);
 			})
+			console.log(this.indexMap)//打印检查我们的哈希表
 			console.log(this.unitarr[0])
 			//进行地图上单位的初始化
 			this.unitarr[0].unitType = 1
@@ -75,9 +80,9 @@
 			this.unitarr[1].unitInfo = getUnitInfo(this.unitarr[1].unitType)
 			this.unitarr[2].unitType = 2
 			this.unitarr[2].unitInfo = getUnitInfo(this.unitarr[2].unitType)
-			this.unitarr[0].team = 1
-			this.unitarr[1].team = 2
-			this.unitarr[2].team = 2
+			this.unitarr[0].team = 0
+			this.unitarr[1].team = 1
+			this.unitarr[2].team = 1
 
 			console.log(this.unitarr)
 			//建立一个二维坐标映射表用于优化遍历算法
@@ -88,7 +93,6 @@
 					this.coordinateMap[`${j-Math.ceil(i/2)},${i}`] = i * this.rows[0].length + j;
 				}
 			}
-			console.log("打印哈希表")
 			console.log(this.coordinateMap)
 			setTimeout(() => {
 				this.cells = this.$refs.cells
@@ -168,6 +172,7 @@
 			selectCell(rowIndex, cellIndex) {
 				// 更新选中格子的状态
 				this.rows[rowIndex][cellIndex].selected = !this.rows[rowIndex][cellIndex].selected
+				
 				if (this.rows[rowIndex][cellIndex].selected) {
 					console.log(`选中了(${rowIndex},${cellIndex-Math.ceil(rowIndex/2)})`)
 					console.log(rowIndex * 10 + cellIndex)
@@ -270,7 +275,6 @@
 					}
 				}
 				//通常状态下的触发
-				console.log(event.target)
 				this.selectedUnit = !this.selectedUnit
 				console.log("选中了单位")
 				console.log("现在单位的单元格标签" + unit.x + unit.y)
@@ -326,7 +330,9 @@
 				// const positionY = parseInt(rect.top + window.scrollY-35)
 				//深拷贝JSON.parse(JSON.stringify(this.rows.flat()))
 				this.selectedUnit = !this.selectedUnit
+				this.indexMap.delete(unit.id)
 				unit.id = JSON.parse(JSON.stringify(this.cellarr[index].id))
+				this.indexMap.set(unit.id,this.unitarr.indexOf(unit))
 				unit.positionX = JSON.parse(JSON.stringify(this.cellarr[index].positionX))
 				unit.positionY = JSON.parse(JSON.stringify(this.cellarr[index].positionY))
 				unit.x = JSON.parse(JSON.stringify(this.cellarr[index].x))
@@ -358,7 +364,9 @@
 					if (!index || index === unit.id) {
 						continue
 					}
-					if (this.cellarr[index].hasUnit) {
+					if (this.cellarr[index].hasUnit&&this.unitarr[this.indexMap.get(index)].team!==unit.team) {
+						console.log(this.indexMap)
+						console.log(this.unitarr[this.indexMap.get(index)]+"这里这里这里")
 						console.log("攻击范围内有敌人")
 						//搜寻到此网格并且使这个网格染成红色
 						const moveCell = document.getElementsByClassName("hex-cell")[index]
@@ -428,7 +436,8 @@
 				coordinateMap: {},
 				attackStatus: [],
 				currentAttacker: {},
-				effect: false
+				effect: false,
+				indexMap:null
 			}
 		}
 	}
@@ -538,7 +547,7 @@
 		height: 100%;
 		display: block;
 		background-color: yellowgreen;
-		transition: all 0.2s ease
+		transition: all 0.7s ease
 	}
 
 	.unit .unit-tag {
