@@ -1,9 +1,22 @@
 <template>
 	<div class="hexmap">
+		<div class="UI">
+			<div class="economy">
+				<img src="../../static/UI/economy.png" />
+				<span>{{ economy }}</span>
+			</div>
+			<div class="industry">
+				<img src="../../static/UI/industry.png" />
+				<span>{{ industry }}</span>
+			</div>
+			<div class="date">
+				<span>{{date.year}}年{{date.month}}月{{date.date}}日</span>
+			</div>
+		</div>
 		<div :class="rowIndex % 2 === 1 ? 'hex-row' : 'hex-row-vice'" v-for="(row, rowIndex) in rows" :key="rowIndex">
 			<div class="hex-cell" v-for="(cell, cellIndex) in row" :key="cellIndex" :class="{ 
 				selected: cell.selected ,
-				}" @click="selectCell(rowIndex, cellIndex)" ref="cells">
+				}" @click="selectCell(rowIndex, cellIndex) " ref="cells">
 				<span class="hex-label">{{ cell.label }}
 
 				</span>
@@ -12,23 +25,36 @@
 			</div>
 		</div>
 		<!-- 遍历生成地图上的地形，建筑 -->
-		<div class="building" v-for="(cell,unitIndex) in cellarr" v-if="cell.building"
+		<div class="building" v-for="(cell,unitIndex) in cellarr" v-show="cell.building>0"
 			:class="getBuildingClass(cell.building)"
-			:style="{top: cell.positionY+25 + 'px', left: cell.positionX-35 + 'px'}">
+			:style="{top: cell.positionY+25 + 'px', left: cell.positionX+42 + 'px'}">
+
 		</div>
 		<!-- 遍历生成地图上的初始单位 -->
-		<div class="unit" v-for="(unit,unitIndex) in unitarr" v-if="unit.hasUnit" :class="getUnitClass(unit.unitType)"
-			:style="{top: unit.positionY + 'px', left: unit.positionX+ 'px'}" @click="selectUnit($event,unit,attackStatus)"
-			:ref="'unit-'+unitIndex">
-			<div class="effect_wrapper"></div>
-			<div class="effect"></div>
-			<div class="health-bar">
-				<span class="current-health" :style="{width:unit.hp+'%'}"></span>
-			</div>
-			<!-- <span class="unit-tag">{{unit.unitInfo.name}}</span> -->
+		<transition-group name="fade" tag="div">
+			<div class="unit" v-for="(unit,unitIndex) in unitarr" v-if="unit.hasUnit" :key="unitIndex"
+				:class="getUnitClass(unit.unitType,unit.headEast)"
+				:style="{top: unit.positionY + 'px', left: unit.positionX+ 'px'}"
+				@click="selectUnit($event,unit,attackStatus)" :ref="'unit-'+unitIndex">
+				<div class="effect_wrapper"></div>
+				<div class="effect">
+					<span class="damage">-{{damage}}</span>
+				</div>
+				<div class="health-bar">
+					<span class="current-health" :style="{width:unit.hp+'%'}"></span>
+				</div>
+				<!-- <span class="unit-tag">{{unit.unitInfo.name}}</span> -->
 
+			</div>
+		</transition-group>
+		<!-- 浮动的计划面板 -->
+		<div class="panel_btn" @click="showPanel()">
+			计划
 		</div>
 
+		<!-- 单元格详情面板 -->
+		<MyPanel :isShowPanel="this.isShowPanel" @update:is-show-panel="updateIsShowPanel" @product-unit="productUnit">
+		</MyPanel>
 	</div>
 </template>
 
@@ -39,8 +65,14 @@
 	import showRange from '../../my_modules/showRange.js' //引入显示范围
 	import getUnitInfo from '../../my_modules/unitInfo.js' //引入单位数据表
 	import audio from '../../my_modules/audio.js' //引入音频文件
-import { indexOf } from 'lodash';
+	import {
+		indexOf
+	} from 'lodash';
+	import MyPanel from './pannel.vue'
 	const HexMapMixin = {
+		components: {
+			MyPanel
+		},
 		data() {
 			return {
 				// 存储六边形地图数据
@@ -61,17 +93,26 @@ import { indexOf } from 'lodash';
 			this.cellarr[68].building = 9
 			this.cellarr[34].building = 9
 
-			let filteredArr = this.cellarr.filter(item => item.hasUnit)
+			let filteredArr = this.cellarr.filter(item => item.hasUnit) //筛选出含有单位的数组
+			let cityArr = this.cellarr.filter(item => item.building == 1) //筛选出含有建筑的数组
 			let newUnitArr = cloneDeep(filteredArr) //深拷贝的形式进行对象赋值避免带来的连锁效应
-			this.indexMap = new Map()//创建一个新的哈希映射表，使我们两个数组之间后续可以利用下标进行联系
-			filteredArr.forEach((item,index) => {
-				this.indexMap.set(this.cellarr.indexOf(item),index) //这个哈希表前者为unitarr的下标，后者为cellarr的下标
+			let newCityArr = cloneDeep(cityArr) //深拷贝城市列表
+			this.indexMap = new Map() //创建一个新的哈希映射表，使我们两个数组之间后续可以利用下标进行联系
+			//将单位加入到哈希表当中
+			filteredArr.forEach((item, index) => {
+				this.indexMap.set(this.cellarr.indexOf(item), index) //这个哈希表前者为unitarr的下标，后者为cellarr的下标
 			})
-			newUnitArr.forEach((item,index) => {
+			//创建一个能够响应的单位列表
+			newUnitArr.forEach((item, index) => {
 				//赋值到我们的数组当中
 				this.unitarr.push(item);
 			})
-			console.log(this.indexMap)//打印检查我们的哈希表
+			//创建一个能够响应的城市、工厂列表
+			newCityArr.forEach((item, index) => {
+				//赋值到我们的数组当中
+				this.cityarr.push(item);
+			})
+			console.log(this.indexMap) //打印检查我们的哈希表
 			console.log(this.unitarr[0])
 			//进行地图上单位的初始化
 			this.unitarr[0].unitType = 1
@@ -138,10 +179,11 @@ import { indexOf } from 'lodash';
 								hasUnit: false, //是否存在单位
 								positionX: j * 77 + 77,
 								positionY: i * 60 + 10, //渲染单位初始状态，后续在mounted函数调用后这个坐标数据会被覆盖
-								building: 'default',
+								building: 0,
 								unitType: 'default',
 								hp: 100,
 								unitInfo: getUnitInfo('default'),
+								headEast: false
 							});
 						}
 					} else {
@@ -155,10 +197,11 @@ import { indexOf } from 'lodash';
 								hasUnit: false, //是否存在单位
 								positionX: j * 77 + 115,
 								positionY: i * 60 + 10, //渲染单位初始状态，后续在mounted函数调用后这个坐标数据会被覆盖
-								building: 'default',
+								building: 0,
 								unitType: 'default',
 								hp: 100,
-								unitInfo: getUnitInfo('default')
+								unitInfo: getUnitInfo('default'),
+								headEast: false
 							})
 						}
 					}
@@ -172,11 +215,15 @@ import { indexOf } from 'lodash';
 			selectCell(rowIndex, cellIndex) {
 				// 更新选中格子的状态
 				this.rows[rowIndex][cellIndex].selected = !this.rows[rowIndex][cellIndex].selected
-				
+
 				if (this.rows[rowIndex][cellIndex].selected) {
 					console.log(`选中了(${rowIndex},${cellIndex-Math.ceil(rowIndex/2)})`)
 					console.log(rowIndex * 10 + cellIndex)
 				}
+				if (this.cellarr[rowIndex * 10 + cellIndex].building >= 0) {
+					console.log("此处有建筑一座")
+				}
+
 			},
 			//这个异步函数用于清除移动面板中的高亮格子,异步函数比较占用内存所以就不使用异步了
 			// async clearMoveCell(){
@@ -216,33 +263,37 @@ import { indexOf } from 'lodash';
 					}
 				}
 			},
-			selectUnit(event,unit, attackStatus) {
+			selectUnit(event, unit, attackStatus) {
 				//如果判定接收到的是一个attack值，则触发攻击判定
-				for(let i = 0;i<attackStatus.length;i++){
+				for (let i = 0; i < attackStatus.length; i++) {
+					if (attackStatus[i] !== unit.id) continue
 					if (attackStatus[i] === unit.id) {
+						console.log(attackStatus)
 						console.log("触发了攻击事件")
 						//这个循环只是用来消除背景颜色
-						for(let i = 0;i<attackStatus.length;i++){
-							let index=attackStatus[i]
+						for (let i = 0; i < attackStatus.length; i++) {
+							let index = attackStatus[i]
 							let moveCell = document.getElementsByClassName("hex-cell")[index]
 							moveCell.style.backgroundColor = ''
 						}
 						//使用ref的方式绑定每一个单位的唯一标识符，并且能够随时用JS访问到这个单位
 						const currentUnit = this.$refs['unit-' + this.unitarr.indexOf(unit)]
 						console.log(currentUnit[0])
-						
+
 						//进行战斗计算
-						this.currentAttacker.hp = this.currentAttacker.hp - doCombat(unit, this.currentAttacker).result1
+						this.damage = doCombat(unit, this.currentAttacker).result1
+						this.currentAttacker.hp = this.currentAttacker.hp - doCombat(unit, this.currentAttacker)
+							.result1
 						unit.hp = unit.hp - doCombat(unit, this.currentAttacker).result2
 						console.log("进攻者与防御者的生命值剩余：" + this.currentAttacker.hp, unit.hp)
 						if (unit.hp <= 0) {
-							unit.hasUnit=false
+							unit.hasUnit = false
 							// this.unitarr.splice(this.unitarr.indexOf(unit),1)
 							this.cellarr[unit.id].hasUnit = false
 							console.log("防御者已被消灭")
 						}
 						if (this.currentAttacker.hp <= 0) {
-							this.currentAttacker.hasUnit=false
+							this.currentAttacker.hasUnit = false
 							// this.unitarr.splice(this.unitarr.indexOf(this.currentAttacker),1)
 							this.cellarr[this.currentAttacker.id].hasUnit = false
 							console.log("进攻者已被消灭")
@@ -254,7 +305,6 @@ import { indexOf } from 'lodash';
 						//实现攻击特效
 						const effect_open = currentUnit[0].querySelectorAll('.effect')
 						const effect_close = currentUnit[0].querySelectorAll('.effect_wrapper')
-						console.log(effect_open)
 						effect_open.forEach((item) => {
 							console.log("执行了内部")
 							item.style.display = 'block';
@@ -262,18 +312,27 @@ import { indexOf } from 'lodash';
 						effect_close.forEach((item) => {
 							item.style.display = 'none';
 						})
-						let timer=setTimeout(()=>{
+						let timer = setTimeout(() => {
 							effect_open.forEach((item) => {
-							  item.style.display = 'none';
+								item.style.display = 'none';
 							})
 							effect_close.forEach((item) => {
-							  item.style.display = 'block';
+								item.style.display = 'block';
 							})
 							clearTimeout(timer)
-						},500)
-						return
+						}, 500)
+						if (unit.positionX > this.currentAttacker.positionX) {
+							this.currentAttacker.headEast = true
+						} else if (unit.positionX < this.currentAttacker.positionX) {
+							this.currentAttacker.headEast = false
+						}
 					}
+
+					return
 				}
+
+
+				//分割线
 				//通常状态下的触发
 				this.selectedUnit = !this.selectedUnit
 				console.log("选中了单位")
@@ -298,7 +357,6 @@ import { indexOf } from 'lodash';
 					this.clearMoveClick(distanceArr)
 					this.showAttack(unit)
 				}
-
 			},
 			showMove(index, unit, distanceArr) {
 				const moveCell = document.getElementsByClassName("hex-cell")[index] //赋值范围内的六边形元素
@@ -331,8 +389,9 @@ import { indexOf } from 'lodash';
 				//深拷贝JSON.parse(JSON.stringify(this.rows.flat()))
 				this.selectedUnit = !this.selectedUnit
 				this.indexMap.delete(unit.id)
+				const preventUnitX = JSON.parse(JSON.stringify(unit.positionX))
 				unit.id = JSON.parse(JSON.stringify(this.cellarr[index].id))
-				this.indexMap.set(unit.id,this.unitarr.indexOf(unit))
+				this.indexMap.set(unit.id, this.unitarr.indexOf(unit))
 				unit.positionX = JSON.parse(JSON.stringify(this.cellarr[index].positionX))
 				unit.positionY = JSON.parse(JSON.stringify(this.cellarr[index].positionY))
 				unit.x = JSON.parse(JSON.stringify(this.cellarr[index].x))
@@ -341,10 +400,20 @@ import { indexOf } from 'lodash';
 				//将当前单元格标记为有单位存在
 				this.cellarr[index].hasUnit = true
 				console.log(unit)
+				//判断单位是否向东
+				if (unit.positionX > preventUnitX) {
+					unit.headEast = true
+					console.log("单位现在向东")
+					console.log()
+				} else if (unit.positionX < preventUnitX) {
+					unit.headEast = false
+				}
 				//播放移动音效
 				// const audio = new Audio('../static/audio/tank.wav')
 				audio.getAudioByUnitType(unit.unitType).volume = 0.02
 				audio.getAudioByUnitType(unit.unitType).play()
+				//禁用对应的单元格的cell.building的点击事件使我们的单位能够进去
+
 				//数组中的数据发生改变需要我们手动进行刷新
 				// this.$set(this.cellarr, index, cell)
 				//使用异步函数清除所有已经标记的六边形
@@ -364,13 +433,13 @@ import { indexOf } from 'lodash';
 					if (!index || index === unit.id) {
 						continue
 					}
-					if (this.cellarr[index].hasUnit&&this.unitarr[this.indexMap.get(index)].team!==unit.team) {
+					if (this.cellarr[index].hasUnit && this.unitarr[this.indexMap.get(index)].team !== unit.team) {
 						console.log(this.indexMap)
-						console.log(this.unitarr[this.indexMap.get(index)]+"这里这里这里")
+						console.log(this.unitarr[this.indexMap.get(index)] + "这里这里这里")
 						console.log("攻击范围内有敌人")
 						//搜寻到此网格并且使这个网格染成红色
 						const moveCell = document.getElementsByClassName("hex-cell")[index]
-						const timerRed=setTimeout(() => {
+						const timerRed = setTimeout(() => {
 							moveCell.style.backgroundColor = "rgba(192, 32, 35, 0.5)"
 							// clearTimeout(timerRed)
 						}, 300)
@@ -408,19 +477,72 @@ import { indexOf } from 'lodash';
 				}
 			},
 
-			getUnitClass(unitType) {
+			getUnitClass(unitType, headEast) {
 				switch (unitType) {
 					case 1:
-						return 'panzer_1'
+						return headEast ? 'panzer_1_east' : 'panzer_1_west'
 					case 2:
-						return 'panzer_2'
+						return headEast ? 'panzer_2_east' : 'panzer_2_west'
 					case 3:
-						return 'panzer_3'
+						return headEast ? 'panzer_3_east' : 'panzer_3_west'
 					case 4:
-						return 'panzer_4'
+						return headEast ? 'panzer_4_east' : 'panzer_4_west'
 					default:
 						return ''
 				}
+			},
+			//显示单元格面板
+			showPanel() {
+				this.isShowPanel = true
+				console.log("显示面板")
+			},
+			//接收来自子组件的数据
+			updateIsShowPanel(value) {
+				this.isShowPanel = value
+			},
+			//执行生产单位的操作
+			productUnit(unitType) {
+				console.log("执行生产" + unitType + "操作")
+				this.cityarr.forEach((item, index) => {
+					console.log(item)
+					const moveCell = document.getElementsByClassName("building")[item.id]
+					// moveCell.style.backgroundColor="rgba(255, 132, 25, 0.4)"
+					// 创建新的 img 元素
+					const productImg = document.createElement("img")
+					productImg.src = "../../static/UI/cards/product.gif"
+
+					// 设置 .product_img 元素的样式
+					const cellStyle = window.getComputedStyle(moveCell)
+					productImg.style.opacity = "0.6"
+					productImg.style.position = "absolute"
+					productImg.style.width = cellStyle.width
+					productImg.style.height = cellStyle.height
+					productImg.style.transform = "scale(0.7)"
+					productImg.style.pointerEvents = 'auto'
+					//为其添加点击事件
+					productImg.addEventListener('click', function() {
+						this.clickProduct(unitType, item.id, productImg);
+					}.bind(this))
+
+					// 将 .product_img 元素插入到 moveCell 中
+					moveCell.appendChild(productImg)
+				})
+			},
+			//实现根据坐标位置生产单位
+			clickProduct(unitType, id, productImg) {
+				unitType=1
+				console.log("生产了单位！"+unitType+id)
+				this.cellarr[id].hasUnit=true
+				let newUnit = cloneDeep(this.cellarr[id])
+				this.unitarr.push(newUnit)
+				// console.log(this.unitarr)
+				//将新单位加入哈希表
+				this.indexMap.set(id, this.unitarr.length-1)
+				console.log(this.indexMap)
+				this.unitarr[this.unitarr.length-1].team = 0
+				this.unitarr[this.unitarr.length-1].unitType = 1
+				this.unitarr[this.unitarr.length-1].unitInfo = getUnitInfo(this.unitarr[this.unitarr.length-1].unitType)
+				productImg.remove()
 			}
 		}
 	};
@@ -432,12 +554,24 @@ import { indexOf } from 'lodash';
 			return {
 				cellarr: [], //地图列表
 				unitarr: [], //单位列表
+				cityarr: [], //城市列表
 				selectedUnit: false, //是否选择了单位
 				coordinateMap: {},
 				attackStatus: [],
 				currentAttacker: {},
-				effect: false,
-				indexMap:null
+				effect: false, //特效状态的打开与否
+				indexMap: null, //设定单元格数组到单位数组之间的联系
+				economy: 0, //现有非重工业物资
+				industry: 0, //现有重工业物资
+				date: {
+					year: "1942",
+					month: "9",
+					date: "01"
+				},
+				turn: 1, //当前回合数
+				damage: 0, //当前攻击造成的伤害值
+				isShowPanel: false
+
 			}
 		}
 	}
@@ -448,8 +582,8 @@ import { indexOf } from 'lodash';
 	@import url('../../static/CSS/unit.css');
 
 	.hexmap {
-		padding-top: 18px;
-		margin-left: -40px;
+		/* padding-top: 18px; */
+		/* margin-left: -40px; */
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -516,7 +650,15 @@ import { indexOf } from 'lodash';
 		background-position: 1px 1px;
 		display: block;
 		position: absolute;
-		transition: all 0.8s ease-in;
+		transition: left 0.8s ease-in, top 0.8s ease-in, opacity;
+	}
+
+	.fade-leave-active {
+		transition: opacity 1s;
+	}
+
+	.fade-leave-to {
+		opacity: 0;
 	}
 
 	.building {
@@ -565,6 +707,15 @@ import { indexOf } from 'lodash';
 		background-size: cover;
 		margin-left: 20px;
 		display: none;
+		color: #ffffff;
+		font-size: 30px;
+		font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+	}
+
+	.damage {
+		margin-left: 30px;
+		display: inline-block;
+		position: relative;
 	}
 
 	.unit .effect_wrapper {
@@ -573,5 +724,54 @@ import { indexOf } from 'lodash';
 		background-position: center;
 		background-size: cover;
 		margin-left: 10px;
+	}
+
+	.UI {
+		width: 100%;
+		height: 30px;
+		line-height: 30px;
+		/* display: flex;
+		justify-content: center; */
+		/* align-items: center; */
+		font-size: 15px;
+		/* background-color: rgba(243, 219, 255, 0.3) */
+	}
+
+	.economy {
+		margin-left: 30px;
+		margin-right: 50px;
+		display: inline-block;
+	}
+
+	.industry {
+		display: inline-block;
+	}
+
+	.date {
+		margin-left: 500px;
+		display: inline-block;
+		color: white;
+		font-family: 'Courier New', Courier, monospace;
+	}
+
+	.economy img,
+	.industry img {
+		width: 15px;
+		height: 15px;
+		margin-right: 5px;
+	}
+
+	.panel_btn {
+		position: fixed;
+		margin-left: 450px;
+		margin-top: -245px;
+		font-size: 18px;
+	}
+
+	.panel_btn:hover {
+		color: aliceblue;
+		transition: all 0.7s ease-out;
+		cursor: pointer;
+		font-size: 20px;
 	}
 </style>

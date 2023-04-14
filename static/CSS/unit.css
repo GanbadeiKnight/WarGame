@@ -1,7 +1,24 @@
-.panzer_1{
+.panzer_1_west{
 	background-image: url('../../static/unit/tank_de_hd.png');
-	
 }
-.panzer_2{
+.panzer_1_east{
+	background-image: url('../../static/unit/tank_de_hd_e.png');
+}
+.panzer_2_west{
 	background-image: url('../../static/unit/tank_ne_hd.png');
+}
+.panzer_2_east{
+	background-image: url('../../static/unit/tank_ne_hd_e.png');
+}
+.panzer_1_west:hover{
+	background-size: 105%;
+}
+.panzer_1_east:hover{
+	background-size: 105%;
+}
+.panzer_2_west:hover{
+	background-size: 105%;
+}
+.panzer_2_east:hover{
+	background-size: 105%;
 }
