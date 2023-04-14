@@ -1,16 +1,66 @@
 .panzer_1_west{
-	background-image: url('../../static/unit/tank_de_hd.png');
+	background-image: url('../../static/unit/tank_de.png');
 }
 .panzer_1_east{
-	background-image: url('../../static/unit/tank_de_hd_e.png');
+	background-image: url('../../static/unit/tank_de_e.png');
 }
 .panzer_2_west{
-	background-image: url('../../static/unit/tank_ne_hd.png');
+	background-image: url('../../static/unit/tank_su.png');
 }
 .panzer_2_east{
-	background-image: url('../../static/unit/tank_ne_hd_e.png');
+	background-image: url('../../static/unit/tank_su_e.png');
 }
-.panzer_1_west:hover{
+.panzer_heavy_1_west{
+	background-image: url('../../static/unit/heavy_panzer_de.png');
+}
+.panzer_heavy_1_east{
+	background-image: url('../../static/unit/heavy_panzer_de_e.png');
+}
+.panzer_heavy_2_west{
+	background-image: url('../../static/unit/heavy_panzer_su.png');
+}
+.panzer_heavy_2_east{
+	background-image: url('../../static/unit/heavy_panzer_su_e.png');
+}
+.cannon_1_west{
+	background-image: url('../../static/unit/cannon_de.png');
+}
+.cannon_1_east{
+	background-image: url('../../static/unit/cannon_de_e.png');
+}
+.cannon_2_west{
+	background-image: url('../../static/unit/cannon_su.png');
+}
+.cannon_2_east{
+	background-image: url('../../static/unit/cannon_su_e.png');
+}
+.infantry_1_west{
+	background-image: url('../../static/unit/infantry_de.png');
+}
+.infantry_1_east{
+	background-image: url('../../static/unit/infantry_de_e.png');
+}
+.infantry_2_west{
+	background-image: url('../../static/unit/infantry_su.png');
+}
+.infantry_2_east{
+	background-image: url('../../static/unit/infantry_su_e.png');
+}
+.infantry_s_1_west{
+	background-image: url('../../static/unit/infantry_s_de.png');
+}
+.infantry_s_1_east{
+	background-image: url('../../static/unit/infantry_s_de_e.png');
+}
+.infantry_s_2_west{
+	background-image: url('../../static/unit/infantry_s_su.png');
+}
+.infantry_s_2_east{
+	background-image: url('../../static/unit/infantry_s_su_e.png');
+}
+
+
+/* .panzer_1_west:hover{
 	background-size: 105%;
 }
 .panzer_1_east:hover{
@@ -21,4 +71,4 @@
 }
 .panzer_2_east:hover{
 	background-size: 105%;
-}
+} */

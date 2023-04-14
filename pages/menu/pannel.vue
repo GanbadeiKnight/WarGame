@@ -9,27 +9,27 @@
 		<div class="content">
 			<div class="tab-content" :class="{'active': activeTab===0}">
 				<div class="unit_card_container">
-					<div class="unit_card" @click="productFun(1)">
+					<div class="unit_card" @click="productFun('infantry_su')">
 						<img src="../../static/UI/cards/infantry.jpg">
 						<h3>步兵师</h3>
 						<span>组成部队的最基本单位，广泛用于执行防守作战和街巷作战</span>
 					</div>
-					<div class="unit_card" @click="productFun(2)">
+					<div class="unit_card" @click="productFun('infantry_s_su')">
 						<img src="../../static/UI/cards/infantry_s.jpg">
 						<h3>机动步兵连</h3>
 						<span>装备了机动载具的步兵，适合用于突击行动</span>
 					</div>
-					<div class="unit_card" @click="productFun(3)">
+					<div class="unit_card" @click="productFun('cannon_su')">
 						<img src="../../static/UI/cards/cannon.jpg">
 						<h3>炮兵团</h3>
 						<span>大口径火炮能够有效对敌方进行打击</span>
 					</div>
-					<div class="unit_card" @click="productFun(4)">
+					<div class="unit_card" @click="productFun('tank_su')">
 						<img src="../../static/UI/cards/Armored_Division.jpg">
 						<h3>装甲部队</h3>
 						<span>装甲部队是进攻作战中的矛头，拥有极高的机动性和攻击性</span>
 					</div>
-					<div class="unit_card" @click="productFun(5)">
+					<div class="unit_card" @click="productFun('tank_heavy_su')">
 						<img src="../../static/UI/cards/heavy.jpg">
 						<h3>重型装甲部队</h3>
 						<span>造价昂贵的战争机器，无论是在进攻作战还是在防守作战都是强大的力量</span>

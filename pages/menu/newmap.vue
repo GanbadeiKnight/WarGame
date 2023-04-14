@@ -51,6 +51,9 @@
 		<div class="panel_btn" @click="showPanel()">
 			计划
 		</div>
+		<div class="next_turn" @click="nextTurn()">
+			下一回合
+		</div>
 
 		<!-- 单元格详情面板 -->
 		<MyPanel :isShowPanel="this.isShowPanel" @update:is-show-panel="updateIsShowPanel" @product-unit="productUnit">
@@ -115,11 +118,11 @@
 			console.log(this.indexMap) //打印检查我们的哈希表
 			console.log(this.unitarr[0])
 			//进行地图上单位的初始化
-			this.unitarr[0].unitType = 1
+			this.unitarr[0].unitType = 'tank_de'
 			this.unitarr[0].unitInfo = getUnitInfo(this.unitarr[0].unitType)
-			this.unitarr[1].unitType = 2
+			this.unitarr[1].unitType = 'tank_su'
 			this.unitarr[1].unitInfo = getUnitInfo(this.unitarr[1].unitType)
-			this.unitarr[2].unitType = 2
+			this.unitarr[2].unitType = 'tank_su'
 			this.unitarr[2].unitInfo = getUnitInfo(this.unitarr[2].unitType)
 			this.unitarr[0].team = 0
 			this.unitarr[1].team = 1
@@ -183,7 +186,8 @@
 								unitType: 'default',
 								hp: 100,
 								unitInfo: getUnitInfo('default'),
-								headEast: false
+								headEast: false,
+								hasMove: false
 							});
 						}
 					} else {
@@ -201,7 +205,8 @@
 								unitType: 'default',
 								hp: 100,
 								unitInfo: getUnitInfo('default'),
-								headEast: false
+								headEast: false,
+								hasMove: false
 							})
 						}
 					}
@@ -282,9 +287,9 @@
 
 						//进行战斗计算
 						this.damage = doCombat(unit, this.currentAttacker).result1
-						this.currentAttacker.hp = this.currentAttacker.hp - doCombat(unit, this.currentAttacker)
-							.result1
+						this.currentAttacker.hp = this.currentAttacker.hp - doCombat(unit, this.currentAttacker).result1
 						unit.hp = unit.hp - doCombat(unit, this.currentAttacker).result2
+						this.currentAttacker.hasMove = true
 						console.log("进攻者与防御者的生命值剩余：" + this.currentAttacker.hp, unit.hp)
 						if (unit.hp <= 0) {
 							unit.hasUnit = false
@@ -334,6 +339,8 @@
 
 				//分割线
 				//通常状态下的触发
+				//倘若单位已经在本回合移动，则不允许单位再次进行移动
+				if(unit.hasMove){return}
 				this.selectedUnit = !this.selectedUnit
 				console.log("选中了单位")
 				console.log("现在单位的单元格标签" + unit.x + unit.y)
@@ -400,6 +407,8 @@
 				//将当前单元格标记为有单位存在
 				this.cellarr[index].hasUnit = true
 				console.log(unit)
+				//清空单位当前移动状态
+				unit.hasMove = true
 				//判断单位是否向东
 				if (unit.positionX > preventUnitX) {
 					unit.headEast = true
@@ -479,14 +488,20 @@
 
 			getUnitClass(unitType, headEast) {
 				switch (unitType) {
-					case 1:
+					case 'tank_de':
 						return headEast ? 'panzer_1_east' : 'panzer_1_west'
-					case 2:
+					case 'tank_su':
 						return headEast ? 'panzer_2_east' : 'panzer_2_west'
-					case 3:
-						return headEast ? 'panzer_3_east' : 'panzer_3_west'
-					case 4:
-						return headEast ? 'panzer_4_east' : 'panzer_4_west'
+					case 'tank_heavy_de':
+						return headEast ? 'panzer_heavy_1_east' : 'panzer_heavy_1_west'
+					case 'tank_heavy_su':
+						return headEast ? 'panzer_heavy_2_east' : 'panzer_heavy_2_west'
+					case 'infantry_su':
+						return headEast ? 'infantry_2_east' : 'infantry_2_west'
+					case 'infantry_s_su':
+						return headEast ? 'infantry_s_2_east' : 'infantry_s_2_west'
+					case 'cannon_su':
+						return headEast ? 'cannon_2_east' : 'cannon_2_west'
 					default:
 						return ''
 				}
@@ -530,7 +545,8 @@
 			},
 			//实现根据坐标位置生产单位
 			clickProduct(unitType, id, productImg) {
-				unitType=1
+				//防止重复生产
+				if(this.cellarr[id].hasUnit===true){return}
 				console.log("生产了单位！"+unitType+id)
 				this.cellarr[id].hasUnit=true
 				let newUnit = cloneDeep(this.cellarr[id])
@@ -539,10 +555,18 @@
 				//将新单位加入哈希表
 				this.indexMap.set(id, this.unitarr.length-1)
 				console.log(this.indexMap)
-				this.unitarr[this.unitarr.length-1].team = 0
-				this.unitarr[this.unitarr.length-1].unitType = 1
+				this.unitarr[this.unitarr.length-1].team = 1
+				this.unitarr[this.unitarr.length-1].hasMove = true
+				this.unitarr[this.unitarr.length-1].unitType = unitType
 				this.unitarr[this.unitarr.length-1].unitInfo = getUnitInfo(this.unitarr[this.unitarr.length-1].unitType)
 				productImg.remove()
+			},
+			//进行下一回合的功能
+			nextTurn(){
+				for(let i=0;i<this.unitarr.length;i++){
+					this.unitarr[i].hasMove = false
+				}
+				this.date.month=this.date.month+1
 			}
 		}
 	};
@@ -565,7 +589,7 @@
 				industry: 0, //现有重工业物资
 				date: {
 					year: "1942",
-					month: "9",
+					month: 9,
 					date: "01"
 				},
 				turn: 1, //当前回合数
@@ -652,7 +676,19 @@
 		position: absolute;
 		transition: left 0.8s ease-in, top 0.8s ease-in, opacity;
 	}
-
+	
+	.fade-enter {
+		transform: translateY(-50%);
+	}
+	
+	.fade-enter-active {
+		transition: transform 1s cubic-bezier(1,-0.02,0.24,0.98);
+	}
+	
+	.fade-enter-to {
+		transform: translateY(0);
+	}
+	
 	.fade-leave-active {
 		transition: opacity 1s;
 	}
@@ -769,6 +805,20 @@
 	}
 
 	.panel_btn:hover {
+		color: aliceblue;
+		transition: all 0.7s ease-out;
+		cursor: pointer;
+		font-size: 20px;
+	}
+	
+	.next_turn {
+		position: fixed;
+		margin-left: 420px;
+		margin-top: 250px;
+		font-size: 18px;
+	}
+	
+	.next_turn:hover {
 		color: aliceblue;
 		transition: all 0.7s ease-out;
 		cursor: pointer;
