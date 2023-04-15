@@ -17,9 +17,9 @@
 			<div class="hex-cell" v-for="(cell, cellIndex) in row" :key="cellIndex" :class="{ 
 				selected: cell.selected ,
 				}" @click="selectCell(rowIndex, cellIndex) " ref="cells">
-				<span class="hex-label">{{ cell.label }}
+				<!-- <span class="hex-label">{{ cell.label }}
 
-				</span>
+				</span> -->
 				<!-- image class="building_capital" v-if="cell.building === 1">
 					</image> -->
 			</div>
@@ -40,24 +40,55 @@
 				<div class="effect">
 					<span class="damage">-{{damage}}</span>
 				</div>
+				<div class="hasMove_tag" v-show="unit.hasMove">
+					<img src="../../static/UI/hasMove.png">
+				</div>
 				<div class="health-bar">
 					<span class="current-health" :style="{width:unit.hp+'%'}"></span>
 				</div>
 				<!-- <span class="unit-tag">{{unit.unitInfo.name}}</span> -->
-
+				<div class="unit_detail">
+					<div class="image" :class="getUnitDetail(unit.unitType)">
+					</div>
+					<span>
+						<a>{{getUnitInfo(unit.unitType).name}}</a>
+						<a>编制剩余：{{unit.hp}}%</a>
+						<a>{{ unit.hasMove ? '已行动' : '未行动' }}</a>
+						<a>战斗力：{{getUnitInfo(unit.unitType).combat}}</a>
+					</span>
+				</div>
+				
 			</div>
 		</transition-group>
 		<!-- 浮动的计划面板 -->
 		<div class="panel_btn" @click="showPanel()">
 			计划
 		</div>
-		<div class="next_turn" @click="nextTurn()">
+		<div class="next_turn" @click="throttledNextTurn">
 			下一回合
 		</div>
 
 		<!-- 单元格详情面板 -->
 		<MyPanel :isShowPanel="this.isShowPanel" @update:is-show-panel="updateIsShowPanel" @product-unit="productUnit">
 		</MyPanel>
+		<div class="turn_pannel" v-show="this.showTurnPannel">
+			<span class="close_tag" @click="closeTurnPannel">
+				X
+			</span>
+			<span>
+				当前是第{{this.turn}}回合
+			</span>
+			<span>
+				半个月产值： 
+			</span>
+			<span>
+				经济：+{{this.economyIncrease}}
+			</span>
+			<span>
+				工业：+{{this.industryIncrease}}
+			</span>
+		</div>
+
 	</div>
 </template>
 
@@ -69,9 +100,13 @@
 	import getUnitInfo from '../../my_modules/unitInfo.js' //引入单位数据表
 	import audio from '../../my_modules/audio.js' //引入音频文件
 	import {
+		debounce,
 		indexOf
 	} from 'lodash';
 	import MyPanel from './pannel.vue'
+	import getUnitClass from '../../my_modules/getUnitClass.js'
+	import getUnitDetail from '../../my_modules/getUnitDetail.js'
+	import _ from 'lodash'
 	const HexMapMixin = {
 		components: {
 			MyPanel
@@ -118,7 +153,7 @@
 			console.log(this.indexMap) //打印检查我们的哈希表
 			console.log(this.unitarr[0])
 			//进行地图上单位的初始化
-			this.unitarr[0].unitType = 'tank_de'
+			this.unitarr[0].unitType = 'tank_heavy_de'
 			this.unitarr[0].unitInfo = getUnitInfo(this.unitarr[0].unitType)
 			this.unitarr[1].unitType = 'tank_su'
 			this.unitarr[1].unitInfo = getUnitInfo(this.unitarr[1].unitType)
@@ -287,7 +322,8 @@
 
 						//进行战斗计算
 						this.damage = doCombat(unit, this.currentAttacker).result1
-						this.currentAttacker.hp = this.currentAttacker.hp - doCombat(unit, this.currentAttacker).result1
+						this.currentAttacker.hp = this.currentAttacker.hp - doCombat(unit, this.currentAttacker)
+							.result1
 						unit.hp = unit.hp - doCombat(unit, this.currentAttacker).result2
 						this.currentAttacker.hasMove = true
 						console.log("进攻者与防御者的生命值剩余：" + this.currentAttacker.hp, unit.hp)
@@ -305,7 +341,7 @@
 						}
 						this.attackStatus = []
 						//播放进攻音效
-						audio.panzerAttackAudio.volume = 0.1
+						audio.panzerAttackAudio.volume = 0.5
 						audio.panzerAttackAudio.play()
 						//实现攻击特效
 						const effect_open = currentUnit[0].querySelectorAll('.effect')
@@ -340,7 +376,9 @@
 				//分割线
 				//通常状态下的触发
 				//倘若单位已经在本回合移动，则不允许单位再次进行移动
-				if(unit.hasMove){return}
+				if (unit.hasMove) {
+					return
+				}
 				this.selectedUnit = !this.selectedUnit
 				console.log("选中了单位")
 				console.log("现在单位的单元格标签" + unit.x + unit.y)
@@ -419,7 +457,7 @@
 				}
 				//播放移动音效
 				// const audio = new Audio('../static/audio/tank.wav')
-				audio.getAudioByUnitType(unit.unitType).volume = 0.02
+				audio.getAudioByUnitType(unit.unitType).volume = 0.2
 				audio.getAudioByUnitType(unit.unitType).play()
 				//禁用对应的单元格的cell.building的点击事件使我们的单位能够进去
 
@@ -485,31 +523,22 @@
 						return ''
 				}
 			},
-
 			getUnitClass(unitType, headEast) {
-				switch (unitType) {
-					case 'tank_de':
-						return headEast ? 'panzer_1_east' : 'panzer_1_west'
-					case 'tank_su':
-						return headEast ? 'panzer_2_east' : 'panzer_2_west'
-					case 'tank_heavy_de':
-						return headEast ? 'panzer_heavy_1_east' : 'panzer_heavy_1_west'
-					case 'tank_heavy_su':
-						return headEast ? 'panzer_heavy_2_east' : 'panzer_heavy_2_west'
-					case 'infantry_su':
-						return headEast ? 'infantry_2_east' : 'infantry_2_west'
-					case 'infantry_s_su':
-						return headEast ? 'infantry_s_2_east' : 'infantry_s_2_west'
-					case 'cannon_su':
-						return headEast ? 'cannon_2_east' : 'cannon_2_west'
-					default:
-						return ''
-				}
+				return getUnitClass(unitType, headEast)
 			},
+			getUnitDetail(unitType) {
+				return getUnitDetail(unitType)
+			},
+			getUnitInfo(unitType) {
+				return getUnitInfo(unitType)
+			},
+
 			//显示单元格面板
 			showPanel() {
 				this.isShowPanel = true
 				console.log("显示面板")
+				const nextTurnAudio = new Audio('../../../static/audio/btn.wav')
+				nextTurnAudio.play()
 			},
 			//接收来自子组件的数据
 			updateIsShowPanel(value) {
@@ -546,30 +575,97 @@
 			//实现根据坐标位置生产单位
 			clickProduct(unitType, id, productImg) {
 				//防止重复生产
-				if(this.cellarr[id].hasUnit===true){return}
-				console.log("生产了单位！"+unitType+id)
-				this.cellarr[id].hasUnit=true
+				if (this.cellarr[id].hasUnit === true) {
+					productImg.remove()
+					return
+				}
+				//在资源不够时执行
+				if(this.economy<getUnitInfo(unitType).costE||this.industry<getUnitInfo(unitType).costI){
+					const cancelAudio = new Audio('../../../static/audio/cancel.wav')
+					cancelAudio.play()
+					productImg.remove()
+					return
+				}
+				this.economy-=getUnitInfo(unitType).costE
+				this.industry-=getUnitInfo(unitType).costI
+				console.log("生产了单位！" + unitType + id)
+				this.cellarr[id].hasUnit = true
 				let newUnit = cloneDeep(this.cellarr[id])
 				this.unitarr.push(newUnit)
 				// console.log(this.unitarr)
 				//将新单位加入哈希表
-				this.indexMap.set(id, this.unitarr.length-1)
+				this.indexMap.set(id, this.unitarr.length - 1)
 				console.log(this.indexMap)
-				this.unitarr[this.unitarr.length-1].team = 1
-				this.unitarr[this.unitarr.length-1].hasMove = true
-				this.unitarr[this.unitarr.length-1].unitType = unitType
-				this.unitarr[this.unitarr.length-1].unitInfo = getUnitInfo(this.unitarr[this.unitarr.length-1].unitType)
+				this.unitarr[this.unitarr.length - 1].team = 1
+				this.unitarr[this.unitarr.length - 1].hasMove = true
+				this.unitarr[this.unitarr.length - 1].unitType = unitType
+				this.unitarr[this.unitarr.length - 1].unitInfo = getUnitInfo(this.unitarr[this.unitarr.length - 1].unitType)
 				productImg.remove()
+				//播放生产单位的音效
+				const draftAudio = new Audio('../../../static/audio/draft.wav')
+				setTimeout((draftAudio) => {
+					draftAudio.play()
+				}, 450, draftAudio)
+			},
+			closeTurnPannel(){
+				this.showTurnPannel = false
+				const nextTurnAudio = new Audio('../../../static/audio/btn.wav')
+				nextTurnAudio.play()
 			},
 			//进行下一回合的功能
-			nextTurn(){
-				for(let i=0;i<this.unitarr.length;i++){
+			nextTurn() {
+				//更新资源
+				this.economy = this.economy + this.economyIncrease
+				this.industry = this.industry + this.industryIncrease
+				this.turn++
+				//使所有单位能够行动
+				for (let i = 0; i < this.unitarr.length; i++) {
 					this.unitarr[i].hasMove = false
 				}
-				this.date.month=this.date.month+1
-			}
+				//执行AI功能
+				//AIfun()
+				//更新日期
+				addNumberEveryShortTime.call(this, this.date.date)
+				function addNumberEveryShortTime(num, endNum) {
+					let count = 0;
+					const intervalId = setInterval(() => {
+						num++
+						count++
+						// 触发Vue2的响应式更新，并将data.data设置为num的值
+						this.$set(this.date, 'date', num)
+						if (count >= 15) {
+							clearInterval(intervalId)
+							if (num >= 30) {
+								this.date.date = 1
+								this.date.month = this.date.month + 1
+							}
+						}
+						
+					}, 100); // 间隔为100ms
+					
+				}
+				const that = this
+				setTimeout(function(that){
+					that.showTurnPannel = true
+					const popAudio = new Audio('../../../static/audio/pop.wav')
+					popAudio.play()
+				},1500,that)
+
+				
+				if (this.date.month >= 12) {
+					this.date.month = 1
+					this.date.year = this.date.year + 1
+				}
+				//播放音效
+				const nextTurnAudio = new Audio('../../../static/audio/btn.wav')
+				nextTurnAudio.play()
+			},
+			//对我们下一个回合这个函数进行一次优化，使其在1.5秒内最多执行一次，防止抖动
+			throttledNextTurn: _.throttle(function(){
+				this.nextTurn()
+			},1500)
 		}
-	};
+	}
 
 	export default {
 		name: "HexMap",
@@ -585,16 +681,19 @@
 				currentAttacker: {},
 				effect: false, //特效状态的打开与否
 				indexMap: null, //设定单元格数组到单位数组之间的联系
-				economy: 0, //现有非重工业物资
-				industry: 0, //现有重工业物资
+				economy: 350, //现有经济
+				industry: 200, //现有工业物资积攒
+				economyIncrease: 100,//经济产值
+				industryIncrease: 75,//工业产值
 				date: {
-					year: "1942",
+					year: 1942,
 					month: 9,
-					date: "01"
+					date: 1
 				},
 				turn: 1, //当前回合数
 				damage: 0, //当前攻击造成的伤害值
-				isShowPanel: false
+				isShowPanel: false,//是否显示计划面板
+				showTurnPannel: false//是否显示回合面板
 
 			}
 		}
@@ -604,6 +703,7 @@
 <style>
 	@import url('../../static/CSS/building.css');
 	@import url('../../static/CSS/unit.css');
+	@import url('../../static/CSS/detail.css');
 
 	.hexmap {
 		/* padding-top: 18px; */
@@ -655,10 +755,14 @@
 	}
 
 
-	.hex-cell.selected {
-		/* background-color: rgba(192, 192, 192, 0.5); */
-	}
+	/* .hex-cell.selected {
+		background-color: rgba(192, 192, 192, 0.5);
+	} */
 
+	/* .hex-cell:hover {
+		background-color: rgba(223, 223, 223, 0.2);
+	}
+ */
 	.hex-label {
 		position: absolute;
 		top: 50%;
@@ -675,20 +779,26 @@
 		display: block;
 		position: absolute;
 		transition: left 0.8s ease-in, top 0.8s ease-in, opacity;
+		background-repeat: no-repeat;
 	}
-	
+
+	.unit:hover .unit_detail {
+		display: block;
+		opacity: 1;
+	}
+
 	.fade-enter {
 		transform: translateY(-50%);
 	}
-	
+
 	.fade-enter-active {
-		transition: transform 1s cubic-bezier(1,-0.02,0.24,0.98);
+		transition: transform 1s cubic-bezier(1, -0.02, 0.24, 0.98);
 	}
-	
+
 	.fade-enter-to {
 		transform: translateY(0);
 	}
-	
+
 	.fade-leave-active {
 		transition: opacity 1s;
 	}
@@ -752,6 +862,7 @@
 		margin-left: 30px;
 		display: inline-block;
 		position: relative;
+		font-family: '方正综艺简体';
 	}
 
 	.unit .effect_wrapper {
@@ -760,6 +871,37 @@
 		background-position: center;
 		background-size: cover;
 		margin-left: 10px;
+	}
+
+	.unit_detail {
+		width: 135px;
+		height: 220px;
+		background-color: rgba(223, 223, 223, 0.5);
+		position: fixed;
+		top: 10%;
+		left: 1%;
+		/* display: none; */
+		transition: opacity 0.3s ease-in-out, max-height 0.3s ease-in-out;
+		opacity: 0;
+		font-family: '方正综艺简体';
+		color: #000000;
+	}
+
+	.unit_detail .image {
+		position: absolute;
+		top: 10px;
+		left: 18px;
+		width: 95px;
+		margin: auto;
+		height: 100px;
+	}
+
+	.unit_detail span {
+		display: flex;
+		flex-direction: column;
+		position: absolute;
+		top: 120px;
+		left: 20px;
 	}
 
 	.UI {
@@ -777,17 +919,22 @@
 		margin-left: 30px;
 		margin-right: 50px;
 		display: inline-block;
+		font-family: '方正综艺简体';
+		font-size: 20px;
 	}
 
 	.industry {
 		display: inline-block;
+		font-family: '方正综艺简体';
+		font-size: 20px;
 	}
 
 	.date {
 		margin-left: 500px;
 		display: inline-block;
 		color: white;
-		font-family: 'Courier New', Courier, monospace;
+		font-family: '方正综艺简体';
+		font-size: 16px;
 	}
 
 	.economy img,
@@ -802,6 +949,7 @@
 		margin-left: 450px;
 		margin-top: -245px;
 		font-size: 18px;
+		font-family: '方正综艺简体';
 	}
 
 	.panel_btn:hover {
@@ -810,18 +958,50 @@
 		cursor: pointer;
 		font-size: 20px;
 	}
-	
+
 	.next_turn {
 		position: fixed;
 		margin-left: 420px;
 		margin-top: 250px;
 		font-size: 18px;
+		font-family: '方正综艺简体';
 	}
-	
+
 	.next_turn:hover {
 		color: aliceblue;
 		transition: all 0.7s ease-out;
 		cursor: pointer;
 		font-size: 20px;
+	}
+	
+	.unit .hasMove_tag {
+		position: absolute;
+		left: 70px;
+		opacity: 0.6;
+	}
+	.unit .hasMove_tag img {
+	  transform: scale(0.5);
+	}
+	
+	.turn_pannel {
+		position: fixed;
+		width: 200px;
+		height: 120px;
+		background-image: url('../../static/UI/pannel_background.png');
+		background-position: -20px -46px;
+		font-family: '方正综艺简体';
+		/* transform: translate(-100%,-150%); */
+		transform: scale(2);
+	}
+	
+	.turn_pannel span{
+		display: block;
+		margin-left: 10px;
+	}
+	
+	.turn_pannel .close_tag{
+		transform: translate(90%, 10%);
+		font-family: '方正综艺简体';
+		cursor: pointer;
 	}
 </style>

@@ -13,26 +13,31 @@
 						<img src="../../static/UI/cards/infantry.jpg">
 						<h3>步兵师</h3>
 						<span>组成部队的最基本单位，广泛用于执行防守作战和街巷作战</span>
+						<span>经济：100 工业：0</span>
 					</div>
 					<div class="unit_card" @click="productFun('infantry_s_su')">
 						<img src="../../static/UI/cards/infantry_s.jpg">
 						<h3>机动步兵连</h3>
 						<span>装备了机动载具的步兵，适合用于突击行动</span>
+						<span>经济：100 工业：50</span>
 					</div>
 					<div class="unit_card" @click="productFun('cannon_su')">
 						<img src="../../static/UI/cards/cannon.jpg">
 						<h3>炮兵团</h3>
 						<span>大口径火炮能够有效对敌方进行打击</span>
+						<span>经济：200 工业：100</span>
 					</div>
 					<div class="unit_card" @click="productFun('tank_su')">
 						<img src="../../static/UI/cards/Armored_Division.jpg">
 						<h3>装甲部队</h3>
 						<span>装甲部队是进攻作战中的矛头，拥有极高的机动性和攻击性</span>
+						<span>经济：220 工业：150</span>
 					</div>
 					<div class="unit_card" @click="productFun('tank_heavy_su')">
 						<img src="../../static/UI/cards/heavy.jpg">
 						<h3>重型装甲部队</h3>
 						<span>造价昂贵的战争机器，无论是在进攻作战还是在防守作战都是强大的力量</span>
+						<span>经济：400 工业：350</span>
 					</div>
 				</div>
 			</div>
@@ -74,6 +79,9 @@
 				// 触发自定义事件 update:is-show-panel，传递修改后的值
 				const newValue = false
 				this.$emit('update:is-show-panel', newValue)
+				//播放音效
+				const nextTurnAudio = new Audio('../../../static/audio/btn.wav')
+				nextTurnAudio.play()
 			},
 			customFunc() {
 				// 执行自定义功能
@@ -93,11 +101,13 @@
 		top: 40%;
 		left: 50%;
 		transform: translate(-50%, -50%);
-		background-color: rgba(99, 30, 24, 0.3);
+		background-color: rgba(99, 30, 24, 0.7);
+		/* background-image: url('../../static/UI/pannel_background.png'); */
 		width: 90%;
 		height: 50%;
 		padding: 20px;
 		border-radius: 10px;
+		font-family: '方正综艺简体';
 		/* background-color: #fff; */
 	}
 

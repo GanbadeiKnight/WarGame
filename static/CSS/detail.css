@@ -1,0 +1,20 @@
+.panzer_detail{
+	background-image: url('../../static/UI/cards/Armored_Division.jpg');
+	background-size: cover;
+}
+.heavy_detail{
+	background-image: url('../../static/UI/cards/heavy.jpg');
+	background-size: cover;
+}
+.cannon_detail{
+	background-image: url('../../static/UI/cards/cannon.jpg');
+	background-size: cover;
+}
+.infantry_detail{
+	background-image: url('../../static/UI/cards/infantry.jpg');
+	background-size: cover;
+}
+.infantry_s_detail{
+	background-image: url('../../static/UI/cards/infantry_s.jpg');
+	background-size: cover;
+}
