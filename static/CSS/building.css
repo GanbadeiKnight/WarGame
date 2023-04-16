@@ -2,33 +2,74 @@
 	background-image: url('../../static/building/city-capital.png');
 }
 	
-.buidling_midcity {
+.building_midcity {
 	background-image: url('../../static/building/city-medium.png')
 }
 	
-.buidling_urban_1 {
+.building_urban_1 {
 	background-image: url('../../static/building/city-normal-1.png')
 }
 
-.buidling_urban_2 {
+.building_urban_2 {
 	background-image: url('../../static/building/city-normal-2.png')
 }
 
-.buidling_urban_3 {
+.building_urban_3 {
 	background-image: url('../../static/building/city-normal-3.png')
 }
 
-.buidling_urban_4 {
+.building_urban_4 {
 	background-image: url('../../static/building/city-normal-4.png')
 }
 
-.buidling_urban_5 {
+.building_urban_5 {
 	background-image: url('../../static/building/city-normal-5.png')
 }
-.buidling_urban_6 {
+.building_urban_6 {
 	background-image: url('../../static/building/city-normal-6.png')
 }
 
-.buidling_countryside {
+.building_countryside {
 	background-image: url('../../static/building/countryside.png');
+}
+
+.building_factory {
+	background-image: url('../../static/building/factory.png');
+}
+
+.mountain_1 {
+	background-image: url('../../static/map/mountain/mountain_1.png');
+}
+.mountain_2 {
+	background-image: url('../../static/map/mountain/mountain_2.png');
+}
+.mountain_3 {
+	background-image: url('../../static/map/mountain/mountain_3.png');
+}
+.mountain_4 {
+	background-image: url('../../static/map/mountain/mountain_4.png');
+}
+.mountain_5 {
+	background-image: url('../../static/map/mountain/mountain_5.png');
+}
+.mountain_6 {
+	background-image: url('../../static/map/mountain/mountain_6.png');
+}
+.mountain_7 {
+	background-image: url('../../static/map/mountain/mountain_7.png');
+}
+.mountain_8 {
+	background-image: url('../../static/map/mountain/mountain_8.png');
+}
+.mountain_9 {
+	background-image: url('../../static/map/mountain/mountain_9.png');
+}
+.mountain_10 {
+	background-image: url('../../static/map/mountain/mountain_10.png');
+}
+.mountain_11 {
+	background-image: url('../../static/map/mountain/mountain_11.png');
+}
+.mountain_12 {
+	background-image: url('../../static/map/mountain/mountain_12.png');
 }

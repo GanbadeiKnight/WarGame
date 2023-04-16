@@ -24,11 +24,20 @@
 					</image> -->
 			</div>
 		</div>
-		<!-- 遍历生成地图上的地形，建筑 -->
+		<!-- 遍历生成地图上的建筑 -->
 		<div class="building" v-for="(cell,unitIndex) in cellarr" v-show="cell.building>0"
 			:class="getBuildingClass(cell.building)"
-			:style="{top: cell.positionY+25 + 'px', left: cell.positionX+42 + 'px'}">
-
+			:style="{top: cell.positionY+25 + 'px', left: cell.positionX+42 + 'px' ,width: cell.building > 10 ? '100px' : '90px'}">
+			<div class="nation_logo" v-show="cell.tag">
+				<img src="../../static/UI/soviet_ui.png" v-show="cell.team==1">
+				<img src="../../static/UI/nazi_ui.png" v-show="cell.team==0">
+			</div>
+			<div class="innerInfo" v-show="cell.tag">
+				<img src="../../static/UI/building_ui.png">
+				<span>
+					{{cell.tag}}
+				</span>
+			</div>
 		</div>
 		<!-- 遍历生成地图上的初始单位 -->
 		<transition-group name="fade" tag="div">
@@ -45,6 +54,10 @@
 				</div>
 				<div class="health-bar">
 					<span class="current-health" :style="{width:unit.hp+'%'}"></span>
+				</div>
+				<div class="logo">
+					<img src="../../static/UI/soviet_ui.png" v-show="unit.team==1">
+					<img src="../../static/UI/nazi_ui.png" v-show="unit.team==0">
 				</div>
 				<!-- <span class="unit-tag">{{unit.unitInfo.name}}</span> -->
 				<div class="unit_detail">
@@ -106,6 +119,7 @@
 	import MyPanel from './pannel.vue'
 	import getUnitClass from '../../my_modules/getUnitClass.js'
 	import getUnitDetail from '../../my_modules/getUnitDetail.js'
+	import getBuilding from '../../my_modules/getBuilding.js'
 	import _ from 'lodash'
 	const HexMapMixin = {
 		components: {
@@ -121,15 +135,23 @@
 			this.generateHexMap(10, 10); // 默认生成 10x10 的地图
 			this.cellPositions = []; // 存储所有 hex-cell 元素的位置信息
 			this.cellarr = JSON.parse(JSON.stringify(this.rows.flat())) //将rows中的数据扁平化后放进cellarr中,注意必须采用深拷贝的形式
-			//初始地图含有建筑，单位的初始化
-			this.cellarr[14].hasUnit = true
-			this.cellarr[44].hasUnit = true
+			//初始地图含有建筑，单位的初始化,这是一个没有规律可循的绘制过程，每个不同的战役都可以有不同的初始化过程
+			this.cellarr[30].hasUnit = true
+			this.cellarr[40].hasUnit = true
 			this.cellarr[65].hasUnit = true
+			this.cellarr[44].hasUnit = true
 			this.cellarr[48].building = 1
-			this.cellarr[49].building = 4
-			this.cellarr[47].building = 6
-			this.cellarr[68].building = 9
-			this.cellarr[34].building = 9
+			this.cellarr[48].team = 1
+			this.cellarr[48].tag = '莫斯科'
+			this.cellarr[49].building = 5
+			this.cellarr[38].building = 6
+			this.cellarr[39].building = 10
+			this.cellarr[1].building = 18
+			this.cellarr[12].building = 19
+			this.cellarr[2].building = 20
+			this.cellarr[21].building = 6
+			this.cellarr[21].team = 0
+			this.cellarr[21].tag = '斯摩棱斯克'
 
 			let filteredArr = this.cellarr.filter(item => item.hasUnit) //筛选出含有单位的数组
 			let cityArr = this.cellarr.filter(item => item.building == 1) //筛选出含有建筑的数组
@@ -155,13 +177,23 @@
 			//进行地图上单位的初始化
 			this.unitarr[0].unitType = 'tank_heavy_de'
 			this.unitarr[0].unitInfo = getUnitInfo(this.unitarr[0].unitType)
-			this.unitarr[1].unitType = 'tank_su'
-			this.unitarr[1].unitInfo = getUnitInfo(this.unitarr[1].unitType)
+			this.unitarr[3].unitType = 'tank_su'
+			this.unitarr[3].unitInfo = getUnitInfo(this.unitarr[3].unitType)
 			this.unitarr[2].unitType = 'tank_su'
 			this.unitarr[2].unitInfo = getUnitInfo(this.unitarr[2].unitType)
+			this.unitarr[1].unitType = 'tank_de'
+			this.unitarr[1].unitInfo = getUnitInfo(this.unitarr[1].unitType)
 			this.unitarr[0].team = 0
-			this.unitarr[1].team = 1
+			this.unitarr[1].team = 0
 			this.unitarr[2].team = 1
+			this.unitarr[3].team = 1
+			for(let i=0;i<this.unitarr.length;i++){
+				if(this.unitarr[i].team==0){
+					this.unitarr[i].headEast=true
+				}else{
+					this.unitarr[i].headEast=false
+				}
+			}
 
 			console.log(this.unitarr)
 			//建立一个二维坐标映射表用于优化遍历算法
@@ -173,32 +205,40 @@
 				}
 			}
 			console.log(this.coordinateMap)
-			setTimeout(() => {
-				this.cells = this.$refs.cells
-				for (let i = 0; i < this.cells.length; i++) {
-					const cell = this.cells[i];
-					const rect = cell.getBoundingClientRect()
-					this.cellPositions.push({
-						left: parseInt(rect.left + window.pageXOffset),
-						top: parseInt(rect.top + window.pageYOffset)
-					})
-				}
-
-				for (let i = 0; i < this.unitarr.length; i++) {
-					//单位坐标的初始化
-					const unit = this.unitarr[i];
-					this.$set(unit, 'positionX', this.cellPositions[unit.id].left)
-					this.$set(unit, 'positionY', this.cellPositions[unit.id].top - 35)
-					// unit.positionX = this.cellPositions[i].left;
-					// unit.positionY = this.cellPositions[i].top - 35;
-				}
-				//单元格数组的初始化
-				for (let i = 0; i < this.cellarr.length; i++) {
-					const cell = this.cellarr[i]
-					this.$set(cell, 'positionX', this.cellPositions[i].left)
-					this.$set(cell, 'positionY', this.cellPositions[i].top - 35)
-				}
-			}, 0)
+			function init(){
+				setTimeout(() => {
+					this.cells = this.$refs.cells
+					for (let i = 0; i < this.cells.length; i++) {
+						const cell = this.cells[i];
+						const rect = cell.getBoundingClientRect()
+						this.cellPositions.push({
+							left: parseInt(rect.left + window.pageXOffset),
+							top: parseInt(rect.top + window.pageYOffset)
+						})
+					}
+				
+					for (let i = 0; i < this.unitarr.length; i++) {
+						//单位坐标的初始化
+						const unit = this.unitarr[i];
+						this.$set(unit, 'positionX', this.cellPositions[unit.id].left)
+						this.$set(unit, 'positionY', this.cellPositions[unit.id].top - 35)
+						// unit.positionX = this.cellPositions[i].left;
+						// unit.positionY = this.cellPositions[i].top - 35;
+					}
+					//单元格数组的初始化
+					for (let i = 0; i < this.cellarr.length; i++) {
+						const cell = this.cellarr[i]
+						this.$set(cell, 'positionX', this.cellPositions[i].left)
+						this.$set(cell, 'positionY', this.cellPositions[i].top - 35)
+					}
+					this.cellPositions=[]
+				}, 0)
+			}
+			init.bind(this)()
+			window.addEventListener('resize', ()=> {
+				init.bind(this)()
+			})
+			
 		},
 		methods: {
 			generateHexMap(rows, cols) {
@@ -222,7 +262,8 @@
 								hp: 100,
 								unitInfo: getUnitInfo('default'),
 								headEast: false,
-								hasMove: false
+								hasMove: false,
+								tag:''
 							});
 						}
 					} else {
@@ -241,7 +282,8 @@
 								hp: 100,
 								unitInfo: getUnitInfo('default'),
 								headEast: false,
-								hasMove: false
+								hasMove: false,
+								tag:''
 							})
 						}
 					}
@@ -371,8 +413,6 @@
 
 					return
 				}
-
-
 				//分割线
 				//通常状态下的触发
 				//倘若单位已经在本回合移动，则不允许单位再次进行移动
@@ -500,28 +540,7 @@
 
 			},
 			getBuildingClass(building) {
-				switch (building) {
-					case 1:
-						return 'building_capital'
-					case 2:
-						return 'buidling_midcity'
-					case 3:
-						return 'buidling_urban_1'
-					case 4:
-						return 'buidling_urban_2'
-					case 5:
-						return 'buidling_urban_3'
-					case 6:
-						return 'buidling_urban_4'
-					case 7:
-						return 'buidling_urban_5'
-					case 8:
-						return 'buidling_urban_6'
-					case 9:
-						return 'buidling_countryside'
-					default:
-						return ''
-				}
+				return getBuilding(building)
 			},
 			getUnitClass(unitType, headEast) {
 				return getUnitClass(unitType, headEast)
@@ -714,6 +733,7 @@
 		justify-content: center;
 		overflow: scroll;
 		background-image: url("../../static/map/map_cell_2.webp");
+		min-width: 980px;
 	}
 
 	.hex-row {
@@ -773,13 +793,14 @@
 	}
 
 	.unit {
-		width: 75px;
-		height: 50px;
+		width: 60px;
+		height: 40px;
 		background-position: 1px 1px;
 		display: block;
 		position: absolute;
 		transition: left 0.8s ease-in, top 0.8s ease-in, opacity;
 		background-repeat: no-repeat;
+		background-size: cover;
 	}
 
 	.unit:hover .unit_detail {
@@ -808,8 +829,8 @@
 	}
 
 	.building {
-		width: 90px;
-		height: 90px;
+		width: 80px;
+		height: 80px;
 		background-repeat: no-repeat;
 		background-position: center center;
 		background-size: 100%;
@@ -818,14 +839,43 @@
 		transform: translate(-50%, -50%);
 		pointer-events: none;
 	}
+	.building .nation_logo img {
+		width: 20px;
+		position: absolute;
+		left: 12px;
+		top: 67px;
+	}
+	
+	.building .innerInfo{
+		position: absolute;
+		top: 70px;
+		left: 35px;
+		color: white;
+		font-size: 12px;
+		width: fit-content;
+		height: 16px;
+		background-color: rgba(0, 0, 0, 0.3);
+		line-height: 10px;
+		padding-right: 3px;
+	}
+	
+	.building .innerInfo img {
+		position: relative;
+		width: 15px;
+		margin-right: 3px;
+	}
+	.building .innerInfo span {
+		position: relative;
+		top: -1px;
+	}
 
 	.health-bar {
-		width: 55px;
+		width: 45px;
 		height: 4px;
 		display: block;
 		background-color: #DC143C;
 		margin-top: 10px;
-		margin-left: 10px;
+		margin-left: 12px;
 		border: 2px solid #837b76;
 		border-radius: 10px;
 	}
@@ -836,6 +886,15 @@
 		display: block;
 		background-color: yellowgreen;
 		transition: all 0.7s ease
+	}
+	
+	.unit .logo {
+		position: relative;
+		top: -15px;
+	}
+	
+	.unit .logo img {
+		width: 12px;
 	}
 
 	.unit .unit-tag {

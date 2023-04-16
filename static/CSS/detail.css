@@ -1,20 +1,40 @@
-.panzer_detail{
-	background-image: url('../../static/UI/cards/Armored_Division.jpg');
+.panzer_detail_de{
+	background-image: url('../../static/UI/cards/tank_dee.png');
 	background-size: cover;
 }
-.heavy_detail{
-	background-image: url('../../static/UI/cards/heavy.jpg');
+.panzer_detail_su{
+	background-image: url('../../static/UI/cards/tank_suu.png');
 	background-size: cover;
 }
-.cannon_detail{
-	background-image: url('../../static/UI/cards/cannon.jpg');
+.heavy_detail_de{
+	background-image: url('../../static/UI/cards/tiger.png');
 	background-size: cover;
 }
-.infantry_detail{
-	background-image: url('../../static/UI/cards/infantry.jpg');
+.heavy_detail_su{
+	background-image: url('../../static/UI/cards/I-2.png');
 	background-size: cover;
 }
-.infantry_s_detail{
-	background-image: url('../../static/UI/cards/infantry_s.jpg');
+.cannon_detail_de{
+	background-image: url('../../static/UI/cards/88mm.png');
+	background-size: cover;
+}
+.cannon_detail_su{
+	background-image: url('../../static/UI/cards/75mm.png');
+	background-size: cover;
+}
+.infantry_detail_de{
+	background-image: url('../../static/UI/cards/infantry_de.png');
+	background-size: cover;
+}
+.infantry_detail_su{
+	background-image: url('../../static/UI/cards/infnatry_suu.png');
+	background-size: cover;
+}
+.infantry_s_detail_de{
+	background-image: url('../../static/UI/cards/infantry_de.png');
+	background-size: cover;
+}
+.infantry_s_detail_su{
+	background-image: url('../../static/UI/cards/infnatry_suu.png');
 	background-size: cover;
 }
