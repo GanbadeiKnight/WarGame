@@ -14,9 +14,10 @@
 			</div>
 		</div>
 		<div :class="rowIndex % 2 === 1 ? 'hex-row' : 'hex-row-vice'" v-for="(row, rowIndex) in rows" :key="rowIndex">
-			<div class="hex-cell" v-for="(cell, cellIndex) in row" :key="cellIndex" :class="{ 
-				selected: cell.selected ,
-				}" @click="selectCell(rowIndex, cellIndex) " ref="cells">
+			<div class="hex-cell" v-for="(cell, cellIndex) in row" :key="cellIndex" 
+			:class="{ selected: cell.selected}" 
+			@click="selectCell(rowIndex, cellIndex) " 
+			ref="cells">
 				<!-- <span class="hex-label">{{ cell.label }}
 
 				</span> -->
@@ -27,7 +28,8 @@
 		<!-- 遍历生成地图上的建筑 -->
 		<div class="building" v-for="(cell,unitIndex) in cellarr" v-show="cell.building>0"
 			:class="getBuildingClass(cell.building)"
-			:style="{top: cell.positionY+25 + 'px', left: cell.positionX+42 + 'px' ,width: cell.building > 10 ? '100px' : '90px'}">
+			:style="{top: cell.positionY+25 + 'px', left: cell.positionX+42 + 'px' ,width: cell.building > 10 ? '100px' : '90px',
+			pointerEvents: cell.building > 10 ? 'auto' : 'none'}">
 			<div class="nation_logo" v-show="cell.tag">
 				<img src="../../static/UI/soviet_ui.png" v-show="cell.team==1">
 				<img src="../../static/UI/nazi_ui.png" v-show="cell.team==0">
@@ -38,6 +40,11 @@
 					{{cell.tag}}
 				</span>
 			</div>
+			
+		</div>
+		<div class="terrain" v-for="(cell,unitIndex) in cellarr" v-if="cell.terrain>0"
+			:style="{top: cell.positionY+25 + 'px', left: cell.positionX+42 + 'px'}">
+				<img :src="getTerrain(cell.terrain)">
 		</div>
 		<!-- 遍历生成地图上的初始单位 -->
 		<transition-group name="fade" tag="div">
@@ -120,6 +127,7 @@
 	import getUnitClass from '../../my_modules/getUnitClass.js'
 	import getUnitDetail from '../../my_modules/getUnitDetail.js'
 	import getBuilding from '../../my_modules/getBuilding.js'
+	import getTerrain from '../../my_modules/getTerrain.js'
 	import _ from 'lodash'
 	const HexMapMixin = {
 		components: {
@@ -136,10 +144,10 @@
 			this.cellPositions = []; // 存储所有 hex-cell 元素的位置信息
 			this.cellarr = JSON.parse(JSON.stringify(this.rows.flat())) //将rows中的数据扁平化后放进cellarr中,注意必须采用深拷贝的形式
 			//初始地图含有建筑，单位的初始化,这是一个没有规律可循的绘制过程，每个不同的战役都可以有不同的初始化过程
-			this.cellarr[30].hasUnit = true
-			this.cellarr[40].hasUnit = true
-			this.cellarr[65].hasUnit = true
-			this.cellarr[44].hasUnit = true
+			this.cellarr[47].hasUnit = true
+			this.cellarr[58].hasUnit = true
+			this.cellarr[82].hasUnit = true
+			this.cellarr[72].hasUnit = true
 			this.cellarr[48].building = 1
 			this.cellarr[48].team = 1
 			this.cellarr[48].tag = '莫斯科'
@@ -149,9 +157,49 @@
 			this.cellarr[1].building = 18
 			this.cellarr[12].building = 19
 			this.cellarr[2].building = 20
-			this.cellarr[21].building = 6
-			this.cellarr[21].team = 0
-			this.cellarr[21].tag = '斯摩棱斯克'
+			this.cellarr[21].building = 7
+			this.cellarr[21].team = 1
+			this.cellarr[21].tag = '奥列尼诺'
+			//为特定地块添加地形样式
+			this.cellarr[68].terrain = 2
+			this.cellarr[69].terrain = 1
+			this.cellarr[88].terrain = 4
+			this.cellarr[99].terrain = 6
+			this.cellarr[79].terrain = 15
+			this.cellarr[78].terrain = 14
+			this.cellarr[0].terrain = 16
+			this.cellarr[12].terrain = 12
+			this.cellarr[13].terrain = 11
+			this.cellarr[26].terrain = 23
+			this.cellarr[57].terrain = 21
+			this.cellarr[35].building = 11
+			this.cellarr[34].building = 18
+			this.cellarr[44].building = 19
+			this.cellarr[24].building = 20
+			this.cellarr[35].terrain = 12
+			this.cellarr[34].terrain = 13
+			this.cellarr[44].terrain = 14
+			this.cellarr[36].terrain = 13
+			this.cellarr[45].terrain = 11
+			this.cellarr[65].terrain = 15
+			this.cellarr[76].terrain = 13
+			this.cellarr[86].terrain = 14
+			this.cellarr[85].terrain = 15
+			this.cellarr[75].terrain = 15
+			this.cellarr[66].terrain = 14
+			this.cellarr[87].terrain = 1
+			this.cellarr[98].terrain = 16
+			this.cellarr[97].terrain = 3
+			this.cellarr[41].terrain = 1
+			this.cellarr[42].terrain = 2
+			this.cellarr[51].terrain = 3
+			this.cellarr[52].terrain = 6
+			this.cellarr[81].building = 5
+			this.cellarr[81].team = 0
+			this.cellarr[81].tag = '维亚济马'
+			this.cellarr[83].terrain = 1
+			this.cellarr[84].terrain = 4
+			this.cellarr[19].terrain = 22
 
 			let filteredArr = this.cellarr.filter(item => item.hasUnit) //筛选出含有单位的数组
 			let cityArr = this.cellarr.filter(item => item.building == 1) //筛选出含有建筑的数组
@@ -175,18 +223,18 @@
 			console.log(this.indexMap) //打印检查我们的哈希表
 			console.log(this.unitarr[0])
 			//进行地图上单位的初始化
-			this.unitarr[0].unitType = 'tank_heavy_de'
-			this.unitarr[0].unitInfo = getUnitInfo(this.unitarr[0].unitType)
-			this.unitarr[3].unitType = 'tank_su'
+			this.unitarr[3].unitType = 'tank_heavy_de'
 			this.unitarr[3].unitInfo = getUnitInfo(this.unitarr[3].unitType)
-			this.unitarr[2].unitType = 'tank_su'
-			this.unitarr[2].unitInfo = getUnitInfo(this.unitarr[2].unitType)
-			this.unitarr[1].unitType = 'tank_de'
+			this.unitarr[0].unitType = 'tank_su'
+			this.unitarr[0].unitInfo = getUnitInfo(this.unitarr[0].unitType)
+			this.unitarr[1].unitType = 'tank_su'
 			this.unitarr[1].unitInfo = getUnitInfo(this.unitarr[1].unitType)
-			this.unitarr[0].team = 0
-			this.unitarr[1].team = 0
-			this.unitarr[2].team = 1
-			this.unitarr[3].team = 1
+			this.unitarr[2].unitType = 'tank_de'
+			this.unitarr[2].unitInfo = getUnitInfo(this.unitarr[2].unitType)
+			this.unitarr[2].team = 0
+			this.unitarr[3].team = 0
+			this.unitarr[0].team = 1
+			this.unitarr[1].team = 1
 			for(let i=0;i<this.unitarr.length;i++){
 				if(this.unitarr[i].team==0){
 					this.unitarr[i].headEast=true
@@ -263,7 +311,8 @@
 								unitInfo: getUnitInfo('default'),
 								headEast: false,
 								hasMove: false,
-								tag:''
+								tag:'',
+								terrain:0
 							});
 						}
 					} else {
@@ -283,7 +332,8 @@
 								unitInfo: getUnitInfo('default'),
 								headEast: false,
 								hasMove: false,
-								tag:''
+								tag:'',
+								terrain:0
 							})
 						}
 					}
@@ -551,6 +601,10 @@
 			getUnitInfo(unitType) {
 				return getUnitInfo(unitType)
 			},
+			getTerrain(terrain) {
+				return getTerrain(terrain)
+				
+			},
 
 			//显示单元格面板
 			showPanel() {
@@ -731,7 +785,7 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		overflow: scroll;
+		/* overflow: scroll; */
 		background-image: url("../../static/map/map_cell_2.webp");
 		min-width: 980px;
 	}
@@ -1035,7 +1089,7 @@
 	
 	.unit .hasMove_tag {
 		position: absolute;
-		left: 70px;
+		left: 60px;
 		opacity: 0.6;
 	}
 	.unit .hasMove_tag img {
@@ -1063,4 +1117,22 @@
 		font-family: '方正综艺简体';
 		cursor: pointer;
 	}
+	.terrain {
+		transform: translate(-50%, -50%);
+		position: absolute;
+		width: 80px;
+		height: 80px;
+		pointer-events: none;
+	}
+	.terrain img{
+		position: absolute;
+		transform: scale(0.4) translate(-75%, -75%);
+	}
+	/* .UI_nav {
+		position: absolute;
+		background-color: #4f3a0a;
+		width: 160px;
+		height: 590px;
+		transform: translate(-290%, 0);
+	} */
 </style>
