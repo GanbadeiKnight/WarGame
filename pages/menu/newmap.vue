@@ -1,6 +1,11 @@
 <template>
 	<div class="hexmap">
 		<div class="UI">
+			<div class="date">
+				<span>{{date.year}}年{{date.month}}月{{date.date}}日</span>
+			</div>
+		</div>
+		<div class="UI_nav">
 			<div class="economy">
 				<img src="../../static/UI/economy.png" />
 				<span>{{ economy }}</span>
@@ -9,15 +14,10 @@
 				<img src="../../static/UI/industry.png" />
 				<span>{{ industry }}</span>
 			</div>
-			<div class="date">
-				<span>{{date.year}}年{{date.month}}月{{date.date}}日</span>
-			</div>
 		</div>
 		<div :class="rowIndex % 2 === 1 ? 'hex-row' : 'hex-row-vice'" v-for="(row, rowIndex) in rows" :key="rowIndex">
-			<div class="hex-cell" v-for="(cell, cellIndex) in row" :key="cellIndex" 
-			:class="{ selected: cell.selected}" 
-			@click="selectCell(rowIndex, cellIndex) " 
-			ref="cells">
+			<div class="hex-cell" v-for="(cell, cellIndex) in row" :key="cellIndex" :class="{ selected: cell.selected}"
+				@click="selectCell(rowIndex, cellIndex) " ref="cells">
 				<!-- <span class="hex-label">{{ cell.label }}
 
 				</span> -->
@@ -27,8 +27,7 @@
 		</div>
 		<!-- 遍历生成地图上的建筑 -->
 		<div class="building" v-for="(cell,unitIndex) in cellarr" v-show="cell.building>0"
-			:class="getBuildingClass(cell.building)"
-			:style="{top: cell.positionY+25 + 'px', left: cell.positionX+42 + 'px' ,width: cell.building > 10 ? '100px' : '90px',
+			:class="getBuildingClass(cell.building)" :style="{top: cell.positionY+25 + 'px', left: cell.positionX+42 + 'px' ,width: cell.building > 10 ? '100px' : '90px',
 			pointerEvents: cell.building > 10 ? 'auto' : 'none'}">
 			<div class="nation_logo" v-show="cell.tag">
 				<img src="../../static/UI/soviet_ui.png" v-show="cell.team==1">
@@ -40,11 +39,16 @@
 					{{cell.tag}}
 				</span>
 			</div>
-			
+
 		</div>
 		<div class="terrain" v-for="(cell,unitIndex) in cellarr" v-if="cell.terrain>0"
 			:style="{top: cell.positionY+25 + 'px', left: cell.positionX+42 + 'px'}">
-				<img :src="getTerrain(cell.terrain)">
+			<!-- <div class="terrain_detail">
+				<div class="image">
+					<img :src="getTerrainDetail(cell.terrain)">
+				</div>
+			</div> -->
+			<img :src="getTerrain(cell.terrain)">
 		</div>
 		<!-- 遍历生成地图上的初始单位 -->
 		<transition-group name="fade" tag="div">
@@ -77,7 +81,7 @@
 						<a>战斗力：{{getUnitInfo(unit.unitType).combat}}</a>
 					</span>
 				</div>
-				
+
 			</div>
 		</transition-group>
 		<!-- 浮动的计划面板 -->
@@ -99,7 +103,7 @@
 				当前是第{{this.turn}}回合
 			</span>
 			<span>
-				半个月产值： 
+				半个月产值：
 			</span>
 			<span>
 				经济：+{{this.economyIncrease}}
@@ -128,7 +132,10 @@
 	import getUnitDetail from '../../my_modules/getUnitDetail.js'
 	import getBuilding from '../../my_modules/getBuilding.js'
 	import getTerrain from '../../my_modules/getTerrain.js'
+	import getTerrainDetail from '../../my_modules/getTerrainDetail.js'
+	import CalRoute from '../../my_modules/calRoute.js'
 	import _ from 'lodash'
+	import calRoute from '../../my_modules/calRoute.js';
 	const HexMapMixin = {
 		components: {
 			MyPanel
@@ -235,11 +242,11 @@
 			this.unitarr[3].team = 0
 			this.unitarr[0].team = 1
 			this.unitarr[1].team = 1
-			for(let i=0;i<this.unitarr.length;i++){
-				if(this.unitarr[i].team==0){
-					this.unitarr[i].headEast=true
-				}else{
-					this.unitarr[i].headEast=false
+			for (let i = 0; i < this.unitarr.length; i++) {
+				if (this.unitarr[i].team == 0) {
+					this.unitarr[i].headEast = true
+				} else {
+					this.unitarr[i].headEast = false
 				}
 			}
 
@@ -253,7 +260,8 @@
 				}
 			}
 			console.log(this.coordinateMap)
-			function init(){
+
+			function init() {
 				setTimeout(() => {
 					this.cells = this.$refs.cells
 					for (let i = 0; i < this.cells.length; i++) {
@@ -264,7 +272,7 @@
 							top: parseInt(rect.top + window.pageYOffset)
 						})
 					}
-				
+
 					for (let i = 0; i < this.unitarr.length; i++) {
 						//单位坐标的初始化
 						const unit = this.unitarr[i];
@@ -279,14 +287,14 @@
 						this.$set(cell, 'positionX', this.cellPositions[i].left)
 						this.$set(cell, 'positionY', this.cellPositions[i].top - 35)
 					}
-					this.cellPositions=[]
+					this.cellPositions = []
 				}, 0)
 			}
 			init.bind(this)()
-			window.addEventListener('resize', ()=> {
+			window.addEventListener('resize', () => {
 				init.bind(this)()
 			})
-			
+
 		},
 		methods: {
 			generateHexMap(rows, cols) {
@@ -311,8 +319,8 @@
 								unitInfo: getUnitInfo('default'),
 								headEast: false,
 								hasMove: false,
-								tag:'',
-								terrain:0
+								tag: '',
+								terrain: 0
 							});
 						}
 					} else {
@@ -332,8 +340,8 @@
 								unitInfo: getUnitInfo('default'),
 								headEast: false,
 								hasMove: false,
-								tag:'',
-								terrain:0
+								tag: '',
+								terrain: 0
 							})
 						}
 					}
@@ -351,6 +359,7 @@
 				if (this.rows[rowIndex][cellIndex].selected) {
 					console.log(`选中了(${rowIndex},${cellIndex-Math.ceil(rowIndex/2)})`)
 					console.log(rowIndex * 10 + cellIndex)
+					console.log(this.cellarr[rowIndex * 10 + cellIndex].x, this.cellarr[rowIndex * 10 + cellIndex].y)
 				}
 				if (this.cellarr[rowIndex * 10 + cellIndex].building >= 0) {
 					console.log("此处有建筑一座")
@@ -603,7 +612,9 @@
 			},
 			getTerrain(terrain) {
 				return getTerrain(terrain)
-				
+			},
+			getTerrainDetail(terrain) {
+				return getTerrainDetail(terrain)
 			},
 
 			//显示单元格面板
@@ -653,14 +664,14 @@
 					return
 				}
 				//在资源不够时执行
-				if(this.economy<getUnitInfo(unitType).costE||this.industry<getUnitInfo(unitType).costI){
+				if (this.economy < getUnitInfo(unitType).costE || this.industry < getUnitInfo(unitType).costI) {
 					const cancelAudio = new Audio('../../../static/audio/cancel.wav')
 					cancelAudio.play()
 					productImg.remove()
 					return
 				}
-				this.economy-=getUnitInfo(unitType).costE
-				this.industry-=getUnitInfo(unitType).costI
+				this.economy -= getUnitInfo(unitType).costE
+				this.industry -= getUnitInfo(unitType).costI
 				console.log("生产了单位！" + unitType + id)
 				this.cellarr[id].hasUnit = true
 				let newUnit = cloneDeep(this.cellarr[id])
@@ -672,7 +683,8 @@
 				this.unitarr[this.unitarr.length - 1].team = 1
 				this.unitarr[this.unitarr.length - 1].hasMove = true
 				this.unitarr[this.unitarr.length - 1].unitType = unitType
-				this.unitarr[this.unitarr.length - 1].unitInfo = getUnitInfo(this.unitarr[this.unitarr.length - 1].unitType)
+				this.unitarr[this.unitarr.length - 1].unitInfo = getUnitInfo(this.unitarr[this.unitarr.length - 1]
+					.unitType)
 				productImg.remove()
 				//播放生产单位的音效
 				const draftAudio = new Audio('../../../static/audio/draft.wav')
@@ -680,7 +692,7 @@
 					draftAudio.play()
 				}, 450, draftAudio)
 			},
-			closeTurnPannel(){
+			closeTurnPannel() {
 				this.showTurnPannel = false
 				const nextTurnAudio = new Audio('../../../static/audio/btn.wav')
 				nextTurnAudio.play()
@@ -699,6 +711,7 @@
 				//AIfun()
 				//更新日期
 				addNumberEveryShortTime.call(this, this.date.date)
+
 				function addNumberEveryShortTime(num, endNum) {
 					let count = 0;
 					const intervalId = setInterval(() => {
@@ -713,18 +726,18 @@
 								this.date.month = this.date.month + 1
 							}
 						}
-						
+
 					}, 100); // 间隔为100ms
-					
+
 				}
 				const that = this
-				setTimeout(function(that){
+				setTimeout(function(that) {
 					that.showTurnPannel = true
 					const popAudio = new Audio('../../../static/audio/pop.wav')
 					popAudio.play()
-				},1500,that)
+				}, 1500, that)
 
-				
+
 				if (this.date.month >= 12) {
 					this.date.month = 1
 					this.date.year = this.date.year + 1
@@ -732,11 +745,35 @@
 				//播放音效
 				const nextTurnAudio = new Audio('../../../static/audio/btn.wav')
 				nextTurnAudio.play()
+				//执行AI的功能
+				//定义一个延时,使敌方回合的移动看起来更加有章法
+				function delay(time) {
+					return new Promise((resolve) => setTimeout(resolve, time));
+				}
+
+				async function calRoutePromise(unit) {
+					// 异步操作
+					await delay(1000) // 停顿一秒钟
+
+					// 执行你的calRoute操作
+					calRoute.bind(this)(unit)
+					console.log("执行了自动移动功能" + unit.id)
+				}
+				async function AIfun() {
+					for (let unit of this.unitarr) {
+						if (unit.team == 0) {
+							for (let i = 0; i < getUnitInfo(unit.unitType).speed; i++) {
+								await calRoutePromise.bind(this)(unit)
+							}
+						}
+					}
+				}
+				AIfun.bind(this)()
 			},
 			//对我们下一个回合这个函数进行一次优化，使其在1.5秒内最多执行一次，防止抖动
-			throttledNextTurn: _.throttle(function(){
+			throttledNextTurn: _.throttle(function() {
 				this.nextTurn()
-			},1500)
+			}, 1500)
 		}
 	}
 
@@ -756,8 +793,8 @@
 				indexMap: null, //设定单元格数组到单位数组之间的联系
 				economy: 350, //现有经济
 				industry: 200, //现有工业物资积攒
-				economyIncrease: 100,//经济产值
-				industryIncrease: 75,//工业产值
+				economyIncrease: 100, //经济产值
+				industryIncrease: 75, //工业产值
 				date: {
 					year: 1942,
 					month: 9,
@@ -765,9 +802,12 @@
 				},
 				turn: 1, //当前回合数
 				damage: 0, //当前攻击造成的伤害值
-				isShowPanel: false,//是否显示计划面板
-				showTurnPannel: false//是否显示回合面板
-
+				isShowPanel: false, //是否显示计划面板
+				showTurnPannel: false, //是否显示回合面板
+				targetCity: {
+					y: 4,
+					x: 6
+				} //输赢目标城市，AI寻路的终点
 			}
 		}
 	}
@@ -893,14 +933,15 @@
 		transform: translate(-50%, -50%);
 		pointer-events: none;
 	}
+
 	.building .nation_logo img {
 		width: 20px;
 		position: absolute;
 		left: 12px;
 		top: 67px;
 	}
-	
-	.building .innerInfo{
+
+	.building .innerInfo {
 		position: absolute;
 		top: 70px;
 		left: 35px;
@@ -912,12 +953,13 @@
 		line-height: 10px;
 		padding-right: 3px;
 	}
-	
+
 	.building .innerInfo img {
 		position: relative;
 		width: 15px;
 		margin-right: 3px;
 	}
+
 	.building .innerInfo span {
 		position: relative;
 		top: -1px;
@@ -941,12 +983,12 @@
 		background-color: yellowgreen;
 		transition: all 0.7s ease
 	}
-	
+
 	.unit .logo {
 		position: relative;
 		top: -15px;
 	}
-	
+
 	.unit .logo img {
 		width: 12px;
 	}
@@ -1029,8 +1071,6 @@
 	}
 
 	.economy {
-		margin-left: 30px;
-		margin-right: 50px;
 		display: inline-block;
 		font-family: '方正综艺简体';
 		font-size: 20px;
@@ -1040,6 +1080,7 @@
 		display: inline-block;
 		font-family: '方正综艺简体';
 		font-size: 20px;
+		margin-left: 30px;
 	}
 
 	.date {
@@ -1086,16 +1127,17 @@
 		cursor: pointer;
 		font-size: 20px;
 	}
-	
+
 	.unit .hasMove_tag {
 		position: absolute;
 		left: 60px;
 		opacity: 0.6;
 	}
+
 	.unit .hasMove_tag img {
-	  transform: scale(0.5);
+		transform: scale(0.5);
 	}
-	
+
 	.turn_pannel {
 		position: fixed;
 		width: 200px;
@@ -1106,17 +1148,18 @@
 		/* transform: translate(-100%,-150%); */
 		transform: scale(2);
 	}
-	
-	.turn_pannel span{
+
+	.turn_pannel span {
 		display: block;
 		margin-left: 10px;
 	}
-	
-	.turn_pannel .close_tag{
+
+	.turn_pannel .close_tag {
 		transform: translate(90%, 10%);
 		font-family: '方正综艺简体';
 		cursor: pointer;
 	}
+
 	.terrain {
 		transform: translate(-50%, -50%);
 		position: absolute;
@@ -1124,15 +1167,33 @@
 		height: 80px;
 		pointer-events: none;
 	}
-	.terrain img{
+
+	.terrain img {
 		position: absolute;
 		transform: scale(0.4) translate(-75%, -75%);
 	}
-	/* .UI_nav {
+
+	/* .terrain .terrain_detail{
+		opacity: 0;
+		position: fixed;
+		transition: opacity 0.3s ease-in-out, max-height 0.3s ease-in-out;
+	}
+	.terrain .terrain_detail .image{
 		position: absolute;
-		background-color: #4f3a0a;
+		top: 10px;
+		left: 18px;
+		width: 95px;
+		margin: auto;
+		height: 100px;
+	}
+	.terrain:hover .terrain_detail{
+		opacity: 1;
+	} */
+	.UI_nav {
+		position: absolute;
+		background-color: rgba(223, 223, 223, 0.5);
 		width: 160px;
 		height: 590px;
-		transform: translate(-290%, 0);
-	} */
+		transform: translate(-260%, 0);
+	}
 </style>
