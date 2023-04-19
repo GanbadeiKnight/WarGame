@@ -16,7 +16,7 @@ export default function getUnitDetail(unitType){
 		return 'infantry_detail_de'
 		case 'infantry_su':
 		return 'infantry_detail_su'
-		case 'infanrty_s_de':
+		case 'infantry_s_de':
 		return 'infantry_s_detail_de'
 		case 'infantry_s_su':
 		return 'infantry_s_detail_su'

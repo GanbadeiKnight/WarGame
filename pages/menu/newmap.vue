@@ -56,6 +56,7 @@
 				:class="getUnitClass(unit.unitType,unit.headEast)"
 				:style="{top: unit.positionY + 'px', left: unit.positionX+ 'px'}"
 				@click="selectUnit($event,unit,attackStatus)" :ref="'unit-'+unitIndex">
+				<span class="unit-tag">{{unit.unitInfo.tag}}</span>
 				<div class="effect_wrapper"></div>
 				<div class="effect">
 					<span class="damage">-{{damage}}</span>
@@ -70,7 +71,7 @@
 					<img src="../../static/UI/soviet_ui.png" v-show="unit.team==1">
 					<img src="../../static/UI/nazi_ui.png" v-show="unit.team==0">
 				</div>
-				<!-- <span class="unit-tag">{{unit.unitInfo.name}}</span> -->
+				
 				<div class="unit_detail">
 					<div class="image" :class="getUnitDetail(unit.unitType)">
 					</div>
@@ -134,6 +135,7 @@
 	import getTerrain from '../../my_modules/getTerrain.js'
 	import getTerrainDetail from '../../my_modules/getTerrainDetail.js'
 	import CalRoute from '../../my_modules/calRoute.js'
+	import initUnit from '../../my_modules/initUnit.js'
 	import _ from 'lodash'
 	import calRoute from '../../my_modules/calRoute.js';
 	const HexMapMixin = {
@@ -151,10 +153,63 @@
 			this.cellPositions = []; // 存储所有 hex-cell 元素的位置信息
 			this.cellarr = JSON.parse(JSON.stringify(this.rows.flat())) //将rows中的数据扁平化后放进cellarr中,注意必须采用深拷贝的形式
 			//初始地图含有建筑，单位的初始化,这是一个没有规律可循的绘制过程，每个不同的战役都可以有不同的初始化过程
-			this.cellarr[47].hasUnit = true
+			// this.cellarr[47].hasUnit = true
+			// this.cellarr[58].hasUnit = true
+			// this.cellarr[82].hasUnit = true
+			// this.cellarr[72].hasUnit = true
+			//维亚济马被包围的苏军西方面军主力
+			this.cellarr[0].hasUnit = true
+			this.cellarr[10].hasUnit = true
+			this.cellarr[11].hasUnit = true
+			this.cellarr[20].hasUnit = true
+			this.cellarr[21].hasUnit = true
+			//正在向莫斯科前进的第40装家军
+			this.cellarr[14].hasUnit = true
+			//正在包围西方面军苏军的德军第4和第3集团军
+			this.cellarr[22].hasUnit = true
+			this.cellarr[30].hasUnit = true
+			this.cellarr[31].hasUnit = true
+			this.cellarr[32].hasUnit = true
+			
+			//苏联最高统帅部直辖和临时拼凑的莫斯科郊外部队
+			this.cellarr[37].hasUnit = true
+			this.cellarr[38].hasUnit = true
+			this.cellarr[39].hasUnit = true
+			this.cellarr[48].hasUnit = true
+			this.cellarr[49].hasUnit = true
+			this.cellarr[56].hasUnit = true
 			this.cellarr[58].hasUnit = true
-			this.cellarr[82].hasUnit = true
+			
+			//德军
+			this.cellarr[60].hasUnit = true
+			this.cellarr[61].hasUnit = true
+			this.cellarr[63].hasUnit = true
+			
+			
+			//苏军,包含了被包围的布良斯克方面军
+			this.cellarr[66].hasUnit = true
+			this.cellarr[70].hasUnit = true
+			this.cellarr[71].hasUnit = true
+			
+			//德军
 			this.cellarr[72].hasUnit = true
+			//苏军
+			this.cellarr[77].hasUnit = true
+			this.cellarr[80].hasUnit = true
+			//德军
+			this.cellarr[81].hasUnit = true
+			this.cellarr[82].hasUnit = true
+			this.cellarr[83].hasUnit = true
+			//苏军
+			this.cellarr[90].hasUnit = true
+			this.cellarr[91].hasUnit = true
+			//德军
+			this.cellarr[92].hasUnit = true
+			this.cellarr[93].hasUnit = true
+			//纳粹德国南方军团向北进攻的装甲部队
+			this.cellarr[96].hasUnit = true
+			this.cellarr[97].hasUnit = true
+			
 			this.cellarr[48].building = 1
 			this.cellarr[48].team = 1
 			this.cellarr[48].tag = '莫斯科'
@@ -166,7 +221,7 @@
 			this.cellarr[2].building = 20
 			this.cellarr[21].building = 7
 			this.cellarr[21].team = 1
-			this.cellarr[21].tag = '奥列尼诺'
+			this.cellarr[21].tag = '维亚济马'
 			//为特定地块添加地形样式
 			this.cellarr[68].terrain = 2
 			this.cellarr[69].terrain = 1
@@ -203,10 +258,11 @@
 			this.cellarr[52].terrain = 6
 			this.cellarr[81].building = 5
 			this.cellarr[81].team = 0
-			this.cellarr[81].tag = '维亚济马'
+			this.cellarr[81].tag = '布良斯克'
 			this.cellarr[83].terrain = 1
 			this.cellarr[84].terrain = 4
 			this.cellarr[19].terrain = 22
+			
 
 			let filteredArr = this.cellarr.filter(item => item.hasUnit) //筛选出含有单位的数组
 			let cityArr = this.cellarr.filter(item => item.building == 1) //筛选出含有建筑的数组
@@ -229,19 +285,22 @@
 			})
 			console.log(this.indexMap) //打印检查我们的哈希表
 			console.log(this.unitarr[0])
+			
 			//进行地图上单位的初始化
-			this.unitarr[3].unitType = 'tank_heavy_de'
-			this.unitarr[3].unitInfo = getUnitInfo(this.unitarr[3].unitType)
-			this.unitarr[0].unitType = 'tank_su'
-			this.unitarr[0].unitInfo = getUnitInfo(this.unitarr[0].unitType)
-			this.unitarr[1].unitType = 'tank_su'
-			this.unitarr[1].unitInfo = getUnitInfo(this.unitarr[1].unitType)
-			this.unitarr[2].unitType = 'tank_de'
-			this.unitarr[2].unitInfo = getUnitInfo(this.unitarr[2].unitType)
-			this.unitarr[2].team = 0
-			this.unitarr[3].team = 0
-			this.unitarr[0].team = 1
-			this.unitarr[1].team = 1
+			// this.unitarr[3].unitType = 'tank_heavy_de'
+			// this.unitarr[3].unitInfo = getUnitInfo(this.unitarr[3].unitType)
+			// this.unitarr[0].unitType = 'tank_su'
+			// this.unitarr[0].unitInfo = getUnitInfo(this.unitarr[0].unitType)
+			// this.unitarr[1].unitType = 'tank_su'
+			// this.unitarr[1].unitInfo = getUnitInfo(this.unitarr[1].unitType)
+			// this.unitarr[2].unitType = 'tank_de'
+			// this.unitarr[2].unitInfo = getUnitInfo(this.unitarr[2].unitType)
+			// this.unitarr[2].team = 0
+			// this.unitarr[3].team = 0
+			// this.unitarr[0].team = 1
+			// this.unitarr[1].team = 1
+			this.initUnit.bind(this)()
+			
 			for (let i = 0; i < this.unitarr.length; i++) {
 				if (this.unitarr[i].team == 0) {
 					this.unitarr[i].headEast = true
@@ -423,8 +482,7 @@
 
 						//进行战斗计算
 						this.damage = doCombat(unit, this.currentAttacker).result1
-						this.currentAttacker.hp = this.currentAttacker.hp - doCombat(unit, this.currentAttacker)
-							.result1
+						this.currentAttacker.hp = this.currentAttacker.hp - doCombat(unit, this.currentAttacker).result1
 						unit.hp = unit.hp - doCombat(unit, this.currentAttacker).result2
 						this.currentAttacker.hasMove = true
 						console.log("进攻者与防御者的生命值剩余：" + this.currentAttacker.hp, unit.hp)
@@ -616,6 +674,9 @@
 			getTerrainDetail(terrain) {
 				return getTerrainDetail(terrain)
 			},
+			initUnit(){
+				return initUnit.bind(this)()
+			},
 
 			//显示单元格面板
 			showPanel() {
@@ -726,18 +787,9 @@
 								this.date.month = this.date.month + 1
 							}
 						}
-
 					}, 100); // 间隔为100ms
 
 				}
-				const that = this
-				setTimeout(function(that) {
-					that.showTurnPannel = true
-					const popAudio = new Audio('../../../static/audio/pop.wav')
-					popAudio.play()
-				}, 1500, that)
-
-
 				if (this.date.month >= 12) {
 					this.date.month = 1
 					this.date.year = this.date.year + 1
@@ -763,12 +815,22 @@
 					for (let unit of this.unitarr) {
 						if (unit.team == 0) {
 							for (let i = 0; i < getUnitInfo(unit.unitType).speed; i++) {
-								await calRoutePromise.bind(this)(unit)
+								if(!unit.hasMove){
+									await calRoutePromise.bind(this)(unit)
+								}
+								
 							}
+							unit.hasMove = true
 						}
 					}
 				}
-				AIfun.bind(this)()
+				AIfun.bind(this)().then(()=>{
+					setTimeout(()=>{
+						this.showTurnPannel = true
+						const popAudio = new Audio('../../../static/audio/pop.wav')
+						popAudio.play()
+					},1500)
+				})
 			},
 			//对我们下一个回合这个函数进行一次优化，使其在1.5秒内最多执行一次，防止抖动
 			throttledNextTurn: _.throttle(function() {
@@ -966,8 +1028,8 @@
 	}
 
 	.health-bar {
-		width: 45px;
-		height: 4px;
+		width: 15px;
+		height: 2px;
 		display: block;
 		background-color: #DC143C;
 		margin-top: 10px;
@@ -996,8 +1058,10 @@
 	.unit .unit-tag {
 		font-size: 12px;
 		margin-left: 10px;
-		color: #d1cac5;
+		color: #ffffff;
 		font-family: '微软雅黑';
+		position: absolute;
+		top: -10px;
 	}
 
 	.unit .effect {
@@ -1191,9 +1255,9 @@
 	} */
 	.UI_nav {
 		position: absolute;
-		background-color: rgba(223, 223, 223, 0.5);
-		width: 160px;
+		/* background-color: rgba(223, 223, 223, 0.5); */
+		width: 140px;
 		height: 590px;
-		transform: translate(-260%, 0);
+		transform: translate(-310%, 0);
 	}
 </style>
