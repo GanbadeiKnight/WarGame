@@ -84,5 +84,13 @@ export default function getUnitInfo(unitType){
 			costE:200,
 			costI:100
 		}
+		case 'katyusha':
+		return {
+			combat:50,
+			speed:2,
+			name:"喀秋莎火箭炮",
+			castE:500,
+			costI:250
+		}
 	}
 }

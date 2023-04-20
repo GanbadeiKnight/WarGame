@@ -20,6 +20,8 @@ export default function getUnitClass(unitType, headEast) {
 			return headEast ? 'infantry_s_1_east' : 'infantry_s_1_west'
 		case 'cannon_de':
 			return headEast ? 'cannon_1_east' : 'cannon_1_west'
+		case 'katyusha':
+			return headEast ? 'katyusha_east' : 'katyusha_west'
 		default:
 			return ''
 	}

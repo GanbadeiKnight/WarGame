@@ -38,13 +38,25 @@ export default function calRoute(unit){
 					beAttacker.hasUnit = false
 					// this.unitarr.splice(this.unitarr.indexOf(unit),1)
 					this.cellarr[beAttacker.id].hasUnit = false
+					this.indexMap.delete(beAttacker.id)
 					console.log("防御者已被消灭")
+					beAttacker.exp=beAttacker.exp+35
+					if(beAttacker.exp>=100){
+						beAttacker.exp = beAttacker.exp-100
+						beAttacker.hp=beAttacker.hp+50
+					}
 				}
 				if (unit.hp <= 0) {
 					unit.hasUnit = false
 					// this.unitarr.splice(this.unitarr.indexOf(unit),1)
 					this.cellarr[unit.id].hasUnit = false
+					this.indexMap.delete(unit.id)
 					console.log("进攻者已被消灭")
+					unit.exp=unit.exp+35
+					if(unit.exp>=100){
+						unit.exp = unit.exp-100
+						unit.hp=unit.hp+50
+					}
 				}
 				//播放进攻音效
 				audio.panzerAttackAudio.volume = 0.5
@@ -80,16 +92,29 @@ export default function calRoute(unit){
 	}
 	for(let i=0;i<distanceArr.length;i++){
 		let finalDistance=Math.abs(distanceArr[i].x-this.targetCity.x)+Math.abs(distanceArr[i].y-this.targetCity.y)
-		console.log(finalDistance+"索引"+i)
-		if(finalDistance<=tempofFinalDistance){
-			tempofFinalDistance=finalDistance
-			nextCell={
-				x:distanceArr[i].x,
-				y:distanceArr[i].y
+		if(finalDistance<=tempofFinalDistance&&this.cellarr[this.coordinateMap[`${distanceArr[i].x},${distanceArr[i].y}`]]!==undefined){
+			if(i!==0&&distanceArr[i].x>=distanceArr[i-1].x){
+				tempofFinalDistance=finalDistance
+				nextCell={
+					x:distanceArr[i].x,
+					y:distanceArr[i].y
+				}
+			}else if(i===0){
+				tempofFinalDistance=finalDistance
+				nextCell={
+					x:distanceArr[i].x,
+					y:distanceArr[i].y
+				}
 			}
 		}
 	}
 	// return nextCell
+	if(Object.keys(nextCell).length === 0){
+		nextCell={
+			x:unit.x + 1,
+			y:unit.y
+		}
+	}
 	let index = this.coordinateMap[`${nextCell.x},${nextCell.y}`]
 	//执行单位进行移动
 	this.cellarr[unit.id].hasUnit = false
@@ -102,6 +127,7 @@ export default function calRoute(unit){
 	unit.x = JSON.parse(JSON.stringify(this.cellarr[index].x))
 	unit.y = JSON.parse(JSON.stringify(this.cellarr[index].y))
 	this.cellarr[index].hasUnit = true
+	this.cellarr[index].team=JSON.parse(JSON.stringify(unit.team))
 	if (unit.positionX > preventUnitX) {
 		unit.headEast = true
 	} else if (unit.positionX < preventUnitX) {
@@ -110,6 +136,4 @@ export default function calRoute(unit){
 	//播放移动音效
 	audio.getAudioByUnitType(unit.unitType).volume = 0.2
 	audio.getAudioByUnitType(unit.unitType).play()
-	console.log(unit)
-	
 }

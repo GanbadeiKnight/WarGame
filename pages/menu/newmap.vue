@@ -5,6 +5,20 @@
 				<span>{{date.year}}年{{date.month}}月{{date.date}}日</span>
 			</div>
 		</div>
+		<div class="dialog" v-show="textIndex < (myText[turn]===undefined?0:myText[turn].length)" @click="nextText">
+			<img src="../../static/UI/zhukov.png" v-show="turn===0&&textIndex===0?true:false">
+			<img src="../../static/UI/zhukov.png" v-show="turn===0&&textIndex===2?true:false">
+			<img src="../../static/UI/zhukov.png" v-show="turn===1&&textIndex===1?true:false">
+			<img src="../../static/UI/zhukov.png" v-show="turn===10&&textIndex===0?true:false">
+			<img src="../../static/UI/guderian.png" v-show="turn===2&&textIndex===0?true:false">
+			<img src="../../static/UI/guderian.png" v-show="turn===4&&textIndex===0?true:false">
+			<img src="../../static/UI/rokossovsk.png" v-show="turn===1&&textIndex===0?true:false">
+			<img src="../../static/UI/stalin.png" v-show="turn===15&&textIndex===0?true:false">
+			<img src="../../static/UI/hitler.png" v-show="turn===0&&textIndex===1?true:false">
+			<text>
+				{{myText[turn]!==undefined?myText[this.turn][textIndex]:''}}
+			</text>
+		</div>
 		<div class="UI_nav">
 			<div class="economy">
 				<img src="../../static/UI/economy.png" />
@@ -56,7 +70,14 @@
 				:class="getUnitClass(unit.unitType,unit.headEast)"
 				:style="{top: unit.positionY + 'px', left: unit.positionX+ 'px'}"
 				@click="selectUnit($event,unit,attackStatus)" :ref="'unit-'+unitIndex">
-				<span class="unit-tag">{{unit.unitInfo.tag}}</span>
+				<!-- <div class="unit-tag" v-show="unit.unitInfo.tag!==undefined">
+					<span>
+						{{unit.unitInfo.tag}}
+					</span>
+				</div> -->
+				<div class="morale">
+					<img src="../../static/UI/low_morale.png" v-show="unit.status==='low_morale'">
+				</div>
 				<div class="effect_wrapper"></div>
 				<div class="effect">
 					<span class="damage">-{{damage}}</span>
@@ -71,7 +92,7 @@
 					<img src="../../static/UI/soviet_ui.png" v-show="unit.team==1">
 					<img src="../../static/UI/nazi_ui.png" v-show="unit.team==0">
 				</div>
-				
+
 				<div class="unit_detail">
 					<div class="image" :class="getUnitDetail(unit.unitType)">
 					</div>
@@ -80,6 +101,8 @@
 						<a>编制剩余：{{unit.hp}}%</a>
 						<a>{{ unit.hasMove ? '已行动' : '未行动' }}</a>
 						<a>战斗力：{{getUnitInfo(unit.unitType).combat}}</a>
+						<a>状态：{{unit.status==='low_morale' ? '陷入包围':'正常'}}</a>
+						<a>隶属于：{{unit.unitInfo.tag!==undefined ? unit.unitInfo.tag :'未知'}}</a>
 					</span>
 				</div>
 
@@ -104,9 +127,6 @@
 				当前是第{{this.turn}}回合
 			</span>
 			<span>
-				半个月产值：
-			</span>
-			<span>
 				经济：+{{this.economyIncrease}}
 			</span>
 			<span>
@@ -125,6 +145,7 @@
 	import getUnitInfo from '../../my_modules/unitInfo.js' //引入单位数据表
 	import audio from '../../my_modules/audio.js' //引入音频文件
 	import {
+		bind,
 		debounce,
 		indexOf
 	} from 'lodash';
@@ -136,6 +157,7 @@
 	import getTerrainDetail from '../../my_modules/getTerrainDetail.js'
 	import CalRoute from '../../my_modules/calRoute.js'
 	import initUnit from '../../my_modules/initUnit.js'
+	import initText from '../../my_modules/text.js'
 	import _ from 'lodash'
 	import calRoute from '../../my_modules/calRoute.js';
 	const HexMapMixin = {
@@ -148,7 +170,11 @@
 				rows: [],
 			};
 		},
+		created() {
+			this.myText[0] = ['', '']
+		},
 		mounted() {
+			this.initText.bind(this)()
 			this.generateHexMap(10, 10); // 默认生成 10x10 的地图
 			this.cellPositions = []; // 存储所有 hex-cell 元素的位置信息
 			this.cellarr = JSON.parse(JSON.stringify(this.rows.flat())) //将rows中的数据扁平化后放进cellarr中,注意必须采用深拷贝的形式
@@ -158,6 +184,7 @@
 			// this.cellarr[82].hasUnit = true
 			// this.cellarr[72].hasUnit = true
 			//维亚济马被包围的苏军西方面军主力
+
 			this.cellarr[0].hasUnit = true
 			this.cellarr[10].hasUnit = true
 			this.cellarr[11].hasUnit = true
@@ -170,7 +197,7 @@
 			this.cellarr[30].hasUnit = true
 			this.cellarr[31].hasUnit = true
 			this.cellarr[32].hasUnit = true
-			
+
 			//苏联最高统帅部直辖和临时拼凑的莫斯科郊外部队
 			this.cellarr[37].hasUnit = true
 			this.cellarr[38].hasUnit = true
@@ -179,18 +206,18 @@
 			this.cellarr[49].hasUnit = true
 			this.cellarr[56].hasUnit = true
 			this.cellarr[58].hasUnit = true
-			
+
 			//德军
 			this.cellarr[60].hasUnit = true
 			this.cellarr[61].hasUnit = true
 			this.cellarr[63].hasUnit = true
-			
-			
+
+
 			//苏军,包含了被包围的布良斯克方面军
 			this.cellarr[66].hasUnit = true
 			this.cellarr[70].hasUnit = true
 			this.cellarr[71].hasUnit = true
-			
+
 			//德军
 			this.cellarr[72].hasUnit = true
 			//苏军
@@ -209,7 +236,7 @@
 			//纳粹德国南方军团向北进攻的装甲部队
 			this.cellarr[96].hasUnit = true
 			this.cellarr[97].hasUnit = true
-			
+
 			this.cellarr[48].building = 1
 			this.cellarr[48].team = 1
 			this.cellarr[48].tag = '莫斯科'
@@ -262,7 +289,7 @@
 			this.cellarr[83].terrain = 1
 			this.cellarr[84].terrain = 4
 			this.cellarr[19].terrain = 22
-			
+
 
 			let filteredArr = this.cellarr.filter(item => item.hasUnit) //筛选出含有单位的数组
 			let cityArr = this.cellarr.filter(item => item.building == 1) //筛选出含有建筑的数组
@@ -285,7 +312,7 @@
 			})
 			console.log(this.indexMap) //打印检查我们的哈希表
 			console.log(this.unitarr[0])
-			
+
 			//进行地图上单位的初始化
 			// this.unitarr[3].unitType = 'tank_heavy_de'
 			// this.unitarr[3].unitInfo = getUnitInfo(this.unitarr[3].unitType)
@@ -300,7 +327,7 @@
 			// this.unitarr[0].team = 1
 			// this.unitarr[1].team = 1
 			this.initUnit.bind(this)()
-			
+
 			for (let i = 0; i < this.unitarr.length; i++) {
 				if (this.unitarr[i].team == 0) {
 					this.unitarr[i].headEast = true
@@ -378,8 +405,9 @@
 								unitInfo: getUnitInfo('default'),
 								headEast: false,
 								hasMove: false,
-								tag: '',
-								terrain: 0
+								tag: null,
+								terrain: 0,
+								exp: 0
 							});
 						}
 					} else {
@@ -399,8 +427,9 @@
 								unitInfo: getUnitInfo('default'),
 								headEast: false,
 								hasMove: false,
-								tag: '',
-								terrain: 0
+								tag: null,
+								terrain: 0,
+								exp: 0
 							})
 						}
 					}
@@ -482,7 +511,8 @@
 
 						//进行战斗计算
 						this.damage = doCombat(unit, this.currentAttacker).result1
-						this.currentAttacker.hp = this.currentAttacker.hp - doCombat(unit, this.currentAttacker).result1
+						this.currentAttacker.hp = this.currentAttacker.hp - doCombat(unit, this.currentAttacker)
+							.result1
 						unit.hp = unit.hp - doCombat(unit, this.currentAttacker).result2
 						this.currentAttacker.hasMove = true
 						console.log("进攻者与防御者的生命值剩余：" + this.currentAttacker.hp, unit.hp)
@@ -490,13 +520,29 @@
 							unit.hasUnit = false
 							// this.unitarr.splice(this.unitarr.indexOf(unit),1)
 							this.cellarr[unit.id].hasUnit = false
+							//注销该单位在哈希表中的键值对
+							this.indexMap.delete(unit.id)
 							console.log("防御者已被消灭")
+							//击败一个单位即可获得经验值，当经验值蓄满，部队将得到优先补充
+							this.currentAttacker.exp = this.currentAttacker.exp + 35
+							if (this.currentAttacker.exp >= 100) {
+								this.currentAttacker.exp = this.currentAttacker.exp - 100
+								this.currentAttacker.hp = this.currentAttacker.hp + 50
+							}
 						}
 						if (this.currentAttacker.hp <= 0) {
 							this.currentAttacker.hasUnit = false
 							// this.unitarr.splice(this.unitarr.indexOf(this.currentAttacker),1)
 							this.cellarr[this.currentAttacker.id].hasUnit = false
+							//注销该单位在哈希表中的键值对
+							this.indexMap.delete(this.currentAttacker.id)
 							console.log("进攻者已被消灭")
+							//击败一个单位即可获得经验值，当经验值蓄满，部队将得到优先补充
+							unit.exp = unit.exp + 35
+							if (unit.exp >= 100) {
+								unit.exp = unit.exp - 100
+								unit.hp = unit.hp + 50
+							}
 						}
 						this.attackStatus = []
 						//播放进攻音效
@@ -539,6 +585,9 @@
 				this.selectedUnit = !this.selectedUnit
 				console.log("选中了单位")
 				console.log("现在单位的单元格标签" + unit.x + unit.y)
+				if (unit.status === 'low_morale') {
+					unit.unitInfo.speed = 0
+				}
 				let dist = unit.unitInfo.speed
 				const distanceArr = showRange(unit.x, unit.y, dist)
 				if (this.selectedUnit) {
@@ -602,6 +651,7 @@
 				//将当前单元格标记为有单位存在
 				this.cellarr[index].hasUnit = true
 				console.log(unit)
+				this.cellarr[index].team = JSON.parse(JSON.stringify(unit.team))
 				//清空单位当前移动状态
 				unit.hasMove = true
 				//判断单位是否向东
@@ -674,8 +724,11 @@
 			getTerrainDetail(terrain) {
 				return getTerrainDetail(terrain)
 			},
-			initUnit(){
+			initUnit() {
 				return initUnit.bind(this)()
+			},
+			initText() {
+				return initText.bind(this)()
 			},
 
 			//显示单元格面板
@@ -719,6 +772,10 @@
 			},
 			//实现根据坐标位置生产单位
 			clickProduct(unitType, id, productImg) {
+				//被占领的城市无法执行生产
+				if (this.cellarr[id].team !== 1) {
+					return
+				}
 				//防止重复生产
 				if (this.cellarr[id].hasUnit === true) {
 					productImg.remove()
@@ -744,8 +801,7 @@
 				this.unitarr[this.unitarr.length - 1].team = 1
 				this.unitarr[this.unitarr.length - 1].hasMove = true
 				this.unitarr[this.unitarr.length - 1].unitType = unitType
-				this.unitarr[this.unitarr.length - 1].unitInfo = getUnitInfo(this.unitarr[this.unitarr.length - 1]
-					.unitType)
+				this.unitarr[this.unitarr.length - 1].unitInfo = getUnitInfo(this.unitarr[this.unitarr.length - 1].unitType)
 				productImg.remove()
 				//播放生产单位的音效
 				const draftAudio = new Audio('../../../static/audio/draft.wav')
@@ -753,10 +809,32 @@
 					draftAudio.play()
 				}, 450, draftAudio)
 			},
+			product(unitType,id,team) {
+				this.cellarr[id].hasUnit = true
+				let newUnit = cloneDeep(this.cellarr[id])
+				this.unitarr.push(newUnit)
+				//将新单位加入哈希表
+				this.indexMap.set(id, this.unitarr.length - 1)
+				console.log(this.indexMap)
+				this.unitarr[this.unitarr.length - 1].team = team
+				this.unitarr[this.unitarr.length - 1].hasMove = true
+				this.unitarr[this.unitarr.length - 1].unitType = unitType
+				this.unitarr[this.unitarr.length - 1].unitInfo = getUnitInfo(this.unitarr[this.unitarr.length - 1].unitType)
+			},
 			closeTurnPannel() {
 				this.showTurnPannel = false
 				const nextTurnAudio = new Audio('../../../static/audio/btn.wav')
 				nextTurnAudio.play()
+			},
+			nextText() {
+				if (this.textIndex === this.myText[0].length - 1) {
+					this.textIndex++;
+				} else {
+					this.textIndex++;
+				}
+			},
+			judgeGen(turn,index){
+				
 			},
 			//进行下一回合的功能
 			nextTurn() {
@@ -780,7 +858,7 @@
 						count++
 						// 触发Vue2的响应式更新，并将data.data设置为num的值
 						this.$set(this.date, 'date', num)
-						if (count >= 15) {
+						if (count >= 3) {
 							clearInterval(intervalId)
 							if (num >= 30) {
 								this.date.date = 1
@@ -805,31 +883,47 @@
 
 				async function calRoutePromise(unit) {
 					// 异步操作
-					await delay(1000) // 停顿一秒钟
+					await delay(700) // 停顿一秒钟
 
 					// 执行你的calRoute操作
 					calRoute.bind(this)(unit)
 					console.log("执行了自动移动功能" + unit.id)
 				}
 				async function AIfun() {
-					for (let unit of this.unitarr) {
-						if (unit.team == 0) {
+					for (let j = this.unitarr.length - 1; j > 0; j--) {
+						let unit = this.unitarr[j]
+						if (unit.team == 0 && unit.hasUnit === true) {
 							for (let i = 0; i < getUnitInfo(unit.unitType).speed; i++) {
-								if(!unit.hasMove){
+								if (!unit.hasMove) {
 									await calRoutePromise.bind(this)(unit)
 								}
-								
 							}
 							unit.hasMove = true
 						}
 					}
 				}
-				AIfun.bind(this)().then(()=>{
-					setTimeout(()=>{
+				//执行下个回合的操作
+				AIfun.bind(this)().then(() => {
+					setTimeout(() => {
 						this.showTurnPannel = true
 						const popAudio = new Audio('../../../static/audio/pop.wav')
 						popAudio.play()
-					},1500)
+						this.textIndex = 0
+						//进行城市占领状态的判定
+						if(this.turn===4){
+							this.product('tank_de',97,0)
+							this.product('tank_de',98,0)
+						}
+						if(this.turn===11){
+							this.product('tank_su',18,1)
+							this.product('tank_heavy_su',27,1)
+							this.product('tank_su',28,1)
+							this.product('katyusha',29,1)
+						}
+						if (this.cellarr[48].team !== 1) {
+							alert("游戏结束！！！")
+						}
+					}, 1500)
 				})
 			},
 			//对我们下一个回合这个函数进行一次优化，使其在1.5秒内最多执行一次，防止抖动
@@ -853,23 +947,25 @@
 				currentAttacker: {},
 				effect: false, //特效状态的打开与否
 				indexMap: null, //设定单元格数组到单位数组之间的联系
-				economy: 350, //现有经济
-				industry: 200, //现有工业物资积攒
-				economyIncrease: 100, //经济产值
-				industryIncrease: 75, //工业产值
+				economy: 50, //现有经济
+				industry: 0, //现有工业物资积攒
+				economyIncrease: 30, //经济产值
+				industryIncrease: 25, //工业产值
 				date: {
 					year: 1942,
-					month: 9,
-					date: 1
+					month: 10,
+					date: 7
 				},
-				turn: 1, //当前回合数
+				turn: 0, //当前回合数
 				damage: 0, //当前攻击造成的伤害值
 				isShowPanel: false, //是否显示计划面板
 				showTurnPannel: false, //是否显示回合面板
 				targetCity: {
 					y: 4,
 					x: 6
-				} //输赢目标城市，AI寻路的终点
+				}, //输赢目标城市，AI寻路的终点
+				textIndex: 0,
+				myText: []
 			}
 		}
 	}
@@ -1055,14 +1151,22 @@
 		width: 12px;
 	}
 
-	.unit .unit-tag {
-		font-size: 12px;
+	/* .unit .unit-tag {
+		padding-left: 2px;
+		font-size: 10px;
 		margin-left: 10px;
 		color: #ffffff;
 		font-family: '微软雅黑';
 		position: absolute;
 		top: -10px;
+		background-color: rgba(76, 76, 76, 0.5);
+		width: fit-content;
+		width: 80px;
+		opacity: 0;
 	}
+	.unit .unit-tag:hover{
+		opacity: 1;
+	} */
 
 	.unit .effect {
 		background-image: url('../../static/effect/explore.gif');
@@ -1094,7 +1198,7 @@
 
 	.unit_detail {
 		width: 135px;
-		height: 220px;
+		height: 300px;
 		background-color: rgba(223, 223, 223, 0.5);
 		position: fixed;
 		top: 10%;
@@ -1202,6 +1306,16 @@
 		transform: scale(0.5);
 	}
 
+	.unit .morale {
+		position: absolute;
+		top: -20px;
+		left: 10px;
+	}
+
+	.unit .morale img {
+		transform: scale(0.5);
+	}
+
 	.turn_pannel {
 		position: fixed;
 		width: 200px;
@@ -1259,5 +1373,26 @@
 		width: 140px;
 		height: 590px;
 		transform: translate(-310%, 0);
+	}
+
+	.dialog {
+		position: absolute;
+		width: 600px;
+		height: 100px;
+		top: 420px;
+		left: 160px;
+		background-color: rgba(193, 139, 101, 0.8);
+		z-index: 666;
+		font-size: 14px;
+		color: #333;
+		text-align: center;
+		padding: 20px;
+		font-weight: bold;
+	}
+	.dialog img{
+		position: absolute;
+		transform: scale(0.3);
+		left: 420px;
+		top: -197px;
 	}
 </style>

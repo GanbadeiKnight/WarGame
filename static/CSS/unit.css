@@ -58,6 +58,12 @@
 .infantry_s_2_east{
 	background-image: url('../../static/unit/infantry_s_su_e.png');
 }
+.katyusha_west{
+	background-image: url('../../static/unit/katyusha_west.png');
+}
+.katyusha_east{
+	background-image: url('../../static/unit/katyusha_east.png');
+}
 
 
 /* .panzer_1_west:hover{
