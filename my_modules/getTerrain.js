@@ -30,5 +30,7 @@ export default function getTerrain(terrain){
 			return '../../static/map/terrain/wetland_2.png';
 		case 23:
 			return '../../static/map/terrain/wetland_3.png';
+		case 30:
+			return '../../static/map/terrain/mosocow.png'
 	}
 }

@@ -27,9 +27,17 @@ export default function calRoute(unit){
 	const distanceArr = showRange(unit.x,unit.y,1)
 	for(let i=0;i<cantMove.length;i++){
 		for(let j=0;j<distanceArr.length;j++){
+			// console.log(this.unitarr[this.indexMap.get(this.coordinateMap[`${distanceArr[j].x},${distanceArr[j].y}`])])
+			// console.log(this.coordinateMap[`${distanceArr[j].x},${distanceArr[j].y}`])
+			// console.log(distanceArr[j].x,distanceArr[j].y)
+			// console.log(this.indexMap.get(this.coordinateMap[`${distanceArr[j].x},${distanceArr[j].y}`]))
+			// console.log(this.cellarr[this.coordinateMap[`${distanceArr[j].x},${distanceArr[j].y}`]].hasUnit)
+			// console.log(this.unitarr)
+			// return
 			if(this.cellarr[this.coordinateMap[`${distanceArr[j].x},${distanceArr[j].y}`]]!==undefined&&this.cellarr[this.coordinateMap[`${distanceArr[j].x},${distanceArr[j].y}`]].hasUnit&&this.unitarr[this.indexMap.get(this.coordinateMap[`${distanceArr[j].x},${distanceArr[j].y}`])].team!==unit.team){
 				console.log("执行进攻敌方单位")
 				let beAttacker = this.unitarr[this.indexMap.get(this.coordinateMap[`${distanceArr[j].x},${distanceArr[j].y}`])]
+				console.log(beAttacker)
 				this.damage = doCombat(beAttacker,unit).result1
 				unit.hp = unit.hp - this.damage
 				beAttacker.hp = beAttacker.hp - doCombat(beAttacker,unit).result2
@@ -110,10 +118,7 @@ export default function calRoute(unit){
 	}
 	// return nextCell
 	if(Object.keys(nextCell).length === 0){
-		nextCell={
-			x:unit.x + 1,
-			y:unit.y
-		}
+		return
 	}
 	let index = this.coordinateMap[`${nextCell.x},${nextCell.y}`]
 	//执行单位进行移动

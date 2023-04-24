@@ -40,4 +40,5 @@
 }
 .katyusha_detail{
 	background-image: url('../../static/UI/cards/katyusha.png');
+	background-size: cover;
 }

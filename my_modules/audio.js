@@ -22,6 +22,8 @@ const audioObject={
 			return this.wheelMoveAudio
 			case 'cannon_su':
 			return this.wheelMoveAudio
+			case 'katyusha':
+			return this.wheelMoveAudio
 		}
 	},
 	panzerMoveAudio:new Audio('../static/audio/tank.wav'),

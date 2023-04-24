@@ -2,34 +2,35 @@
 	"pages": [{
 		"path": "pages/index/index",
 		"style": {
-			"navigationBarTitleText": "uni-app"
+			"navigationBarTitleText": ""
 		}
 	},
 	{
-		"path": "pages/menu/newmap",
+		"path": "pages/compagin/compagin_1",
 		"style": {
-			"navigationBarTitleText": "uni-app"
+			"navigationBarTitleText": "",
+			"navigationStyle": "default"
+			
 		}
 	},
 	{
-		"path": "pages/menu/test",
+		"path": "pages/login",
 		"style": {
-			"navigationBarTitleText": "uni-app"
+			"navigationBarTitleText": "",
+			"navigationStyle": "default"
 		}
 	}
-	
-	
-	
-	
 	],
+	"launch_path": "pages/compagin/compagin",
 	
 	"globalStyle": {
 		"navigationBarTextStyle": "white",
 		"navigationBarTitleText": "我的第一个页面",
 		"navigationBarBackgroundColor": "#464d5d",
-		"backgroundColor": "#6132f8",
+		"backgroundColor": "#59dbf8",
 		"app-plus": {
 			"background": "#efeff4"
 		}
-	}
+	},
+	"defaultPageName":"index"
 }
